@@ -20,8 +20,8 @@ interface ReferenceCase {
 
 const referenceCases: readonly ReferenceCase[] = [
   {
-    id: "double-ko-death",
-    provenance: "Board::wouldBeKoCapture + Board::getNumLibertiesAfterPlay + Board::hasLibertyGainingCaptures",
+    id: "double-ko-guard-rejects-three-liberty-connection",
+    provenance: "Both ko mouths pass wouldBeKoCapture, but defender connection leaves 3 liberties so KataGo does not take the shortcut",
     stones: [
       ["white", 4, 4],
       ["white", 2, 4], ["white", 3, 3], ["white", 3, 5],
@@ -33,8 +33,7 @@ const referenceCases: readonly ReferenceCase[] = [
     target: [4, 4],
     attacker: "black",
     firstPlayer: "attacker",
-    expected: "captured",
-    expectedNodes: 1,
+    expected: "escaped",
   },
   {
     id: "defender-sole-response-upper-bound-capture",
