@@ -148,9 +148,12 @@ export function searchLadder(
     }
 
     if (legalMoves === 0) {
+      // No local defense candidate is not proof of capture: the defender may
+      // have a ko threat, an off-ladder escape, or a legal move omitted by
+      // this deliberately local candidate generator.
       const terminal: NodeResult = toMove === attacker
-        ? { status: "escaped", pv: [], reason: "ko-or-no-legal-move" }
-        : { status: "captured", pv: [], reason: "ko-or-no-legal-move" };
+        ? { status: "escaped", pv: [], reason: "escaped" }
+        : { status: "unknown", pv: [], reason: "ko-or-no-legal-move" };
       if (!options.isLegalMove) memo.set(key, terminal);
       return terminal;
     }
@@ -192,7 +195,8 @@ export function searchLadder(
     attacker,
     nodes,
     principalVariation: result.pv,
-    reason: cutoff ?? result.reason,
+    // A cutoff in a sibling branch must not overwrite a proof found elsewhere.
+    reason: result.status === "unknown" ? (cutoff ?? result.reason) : result.reason,
   };
 }
 
