@@ -66,6 +66,7 @@ describe("game state and turn handling", () => {
     expect(game.toMove).toBe("black");
     expect(game.captures).toEqual({ black: 0, white: 0 });
     expect(game.moveNumber).toBe(0);
+    expect(game.simpleKoPosition).toBeNull();
   });
 
   it("alternates turns and counts captures for the player who made them", () => {
@@ -85,6 +86,7 @@ describe("game state and turn handling", () => {
     game = applyAction(game, { type: "pass" })!;
     expect(game.consecutivePasses).toBe(2);
     expect(applyAction(game, { type: "play", row: 4, col: 4 })).toBeNull();
+    expect(applyAction(game, { type: "pass" })).toBeNull();
   });
 
   it("resets the consecutive-pass count after a stone is played", () => {
@@ -94,7 +96,7 @@ describe("game state and turn handling", () => {
     expect(game.consecutivePasses).toBe(0);
   });
 
-  it("rejects a simple ko recapture", () => {
+  it("rejects a simple ko recapture on the immediately following move", () => {
     const board = createBoard(9);
     board[3][3] = "black";
     board[5][3] = "black";
@@ -108,15 +110,27 @@ describe("game state and turn handling", () => {
     game = { ...game, board, history: [boardKey(createBoard(9)), before] };
     game = applyAction(game, { type: "play", row: 4, col: 4 })!;
     expect(game.captures.black).toBe(1);
+    expect(game.simpleKoPosition).toBe(before);
     expect(applyAction(game, { type: "play", row: 4, col: 3 })).toBeNull();
+  });
+
+  it("a pass clears the immediate simple-ko restriction", () => {
+    let game = createGame(9, "simple");
+    game = { ...game, simpleKoPosition: boardKey(createBoard(9)) };
+    game = applyAction(game, { type: "pass" })!;
+    expect(game.simpleKoPosition).toBeNull();
   });
 
   it("uses positional history to reject a repeated board position", () => {
     const board = createBoard(9);
     const repeated = boardKey(board);
     const game = { ...createGame(9, "positional"), history: [repeated, "not-the-current-position"] };
-    // A legal move cannot recreate the empty board, so the initial position remains in history.
     expect(applyAction(game, { type: "play", row: 4, col: 4 })).not.toBeNull();
+  });
+
+  it("uses situational history keys including the player to move", () => {
+    const game = createGame(9, "situational");
+    expect(game.history[0]).toBe(`${boardKey(game.board)} black`);
   });
 
   it("does not mutate the input board", () => {
