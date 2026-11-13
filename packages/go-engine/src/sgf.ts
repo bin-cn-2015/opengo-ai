@@ -82,10 +82,20 @@ function escapeValue(value: string): string {
 }
 export function serializeSgf(collection: SgfCollection | SgfNode): string {
   const games = "games" in collection ? collection.games : [collection];
-  const writeNode = (n: SgfNode): string => ";" + Object.entries(n.properties)
-    .map(([key, values]) => key + values.map(v => "[" + escapeValue(v) + "]").join(""))
-    .join("") + n.children.map(child => child.children.length ? "(" + writeNode(child) + child.children.map(writeNode).join("") + ")" : writeNode(child)).join("");
-  return games.map(root => "(" + writeNode(root) + ")").join("");
+  const writeTree = (root: SgfNode): string => {
+    let sequence = "";
+    let current: SgfNode | undefined = root;
+    while (current) {
+      sequence += ";" + Object.entries(current.properties)
+        .map(([key, values]) => key + values.map(v => "[" + escapeValue(v) + "]").join(""))
+        .join("");
+      if (current.children.length !== 1) break;
+      current = current.children[0];
+    }
+    const variations = current?.children.map(writeTree).join("") ?? "";
+    return "(" + sequence + variations + ")";
+  };
+  return games.map(writeTree).join("");
 }
 
 const coord = (value: string, size: number): [number, number] => {
