@@ -323,3 +323,9 @@ export function calculateScore(state: GameState): ScoreResult {
     territory, livingStones, prisoners
   };
 }
+
+
+export { searchLadder, findLadderedStones } from "./ladder-search";
+export type { LadderSearchOptions, LadderSearchResult, LadderStatus } from "./ladder-search";
+export { calculatePassAliveArea } from "./pass-alive";
+export type { PassAliveAreaResult, PassAliveRegion } from "./pass-alive";
