@@ -68,7 +68,7 @@ export default function App() {
     const next = applyAction(game, { type: "play", row, col });
     if (next) {
       setGame(next);
-      setMoveLog((moves) => [...moves.slice(0, reviewIndex), { color: game.toMove, row, col }]);
+      setMoveLog((moves) => [...moves, { color: game.toMove, row, col }]);
       setReviewStates(null); setSgfRoot(null); setReviewIndex(0);
     }
   }
@@ -81,7 +81,7 @@ export default function App() {
     const next = applyAction(game, { type: "pass" });
     if (next) {
       setGame(next);
-      setMoveLog((moves) => [...moves.slice(0, reviewIndex), { color: game.toMove, row: -1, col: -1 }]);
+      setMoveLog((moves) => [...moves, { color: game.toMove, row: -1, col: -1 }]);
       setReviewStates(null); setSgfRoot(null); setReviewIndex(0);
     }
   }
