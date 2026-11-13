@@ -99,6 +99,44 @@ describe("ladder search", () => {
     expect(result.status).toBe("escaped");
   });
 
+  it("captures the remaining threatened fragment when the defender can save only one of two", () => {
+    const board = createBoard(9);
+    board[2][2] = "white";
+    board[6][6] = "white";
+    for (const [r, c] of [[1, 2], [2, 1], [3, 2], [5, 6], [6, 5], [7, 6]] as const) {
+      board[r][c] = "black";
+    }
+
+    const result = searchLadder(board, 2, 2, "black", {
+      firstPlayer: "defender",
+      targetStones: [[2, 2], [6, 6]],
+    });
+
+    expect(result.status).toBe("captured");
+    expect(result.principalVariation[0]?.color).toBe("white");
+    expect(result.principalVariation[1]).toEqual({ row: 6, col: 7, color: "black" });
+  });
+
+  it("does not call a multi-fragment target escaped merely because one fragment is saved", () => {
+    const board = createBoard(9);
+    board[2][2] = "white";
+    board[6][6] = "white";
+    for (const [r, c] of [[1, 2], [2, 1], [3, 2], [5, 6], [6, 5], [7, 6]] as const) {
+      board[r][c] = "black";
+    }
+
+    const result = searchLadder(board, 2, 2, "black", {
+      firstPlayer: "defender",
+      targetStones: [[2, 2], [6, 6]],
+      isLegalMove: (_position, row, col, color) =>
+        color !== "white" || (row === 2 && col === 3),
+    });
+
+    expect(result.status).toBe("captured");
+    expect(result.principalVariation[0]).toEqual({ row: 2, col: 3, color: "white" });
+    expect(result.principalVariation[1]).toEqual({ row: 6, col: 7, color: "black" });
+  });
+
   it("finds a snapback-style countercapture of an adjacent attacking stone in atari", () => {
     // The black stone at (4,5) is the just-played attack. White can capture
     // it at (5,5), reopening a third liberty for the original target stone.
