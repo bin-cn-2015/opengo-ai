@@ -93,7 +93,6 @@ export function searchLadder(
   // Only stones present at the root are tracked. A missing point later
   // means that its target fragment was captured during this search.
   const trackedTargetPoints = targetPoints.filter(([r, c]) => board[r][c] === targetColor);
-  const memo = new Map<string, NodeResult>();
   let nodes = 0;
   let cutoff: LadderSearchResult["reason"] | null = null;
 
@@ -141,11 +140,9 @@ export function searchLadder(
     if (path.includes(positionKey + "|" + toMove)) {
       return { status: "unknown", pv: [], reason: "ko-or-no-legal-move" };
     }
-    const groupKey = groups.map(g => g.stones.map(([r,c]) => r + "," + c).sort().join(";")).sort().join("/");
-    const key = positionKey + "|" + toMove + "|" + groupKey;
-    // History-aware legality can make the same board differ by repetition path.
-    const cached = options.isLegalMove ? undefined : memo.get(key);
-    if (cached) return cached;
+    // Do not memoize by board alone: a repeated board is unresolved only
+    // when it already occurs on this exact search path. Different paths can
+    // therefore have different outcomes even for identical board/side keys.
 
     const candidates = new Set<string>(threatenedGroups.flatMap(group => [...group.liberties]));
     // A defender may also capture an adjacent attacking chain in atari. Its
@@ -193,7 +190,6 @@ export function searchLadder(
         : rejectedByHistoryPolicy
           ? { status: "unknown", pv: [], reason: "ko-or-no-legal-move" }
           : { status: "captured", pv: [], reason: "captured" };
-      if (!options.isLegalMove) memo.set(key, terminal);
       return terminal;
     }
 
@@ -225,7 +221,6 @@ export function searchLadder(
         reason: fallbackChild.result.reason,
       };
     }
-    if (!options.isLegalMove) memo.set(key, result);
     return result;
   };
 
