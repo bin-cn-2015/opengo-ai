@@ -45,3 +45,6 @@ export type {
   V7Stone,
   V7TaxRule,
 } from "./feature-encoder-v7";
+
+export { deriveV7RuleFeatures } from "./v7-rule-features";
+export type { V7DerivedRuleFeatures, V7RuleFeatureOptions } from "./v7-rule-features";
