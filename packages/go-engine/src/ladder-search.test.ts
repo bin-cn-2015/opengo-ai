@@ -73,7 +73,7 @@ describe("ladder search", () => {
     expect(result.reason).toBe("ko-or-no-legal-move");
   });
 
-  it("continues tracking all original target fragments after a chain split", () => {
+  it("keeps reading a threatened fragment when another target fragment has more than two liberties", () => {
     const board = createBoard(9);
     board[4][4] = "white";
     board[4][6] = "white";
@@ -83,7 +83,19 @@ describe("ladder search", () => {
     const result = searchLadder(board, 4, 4, "black", {
       targetStones: [[4, 4], [4, 6]],
     });
-    // The second original fragment has ample liberties, so the target has escaped.
+    // The fragment at (4,6) has more than two liberties, but the fragment at
+    // (4,4) is still in atari and can be captured at (4,5).
+    expect(result.status).toBe("captured");
+    expect(result.principalVariation[0]).toEqual({ row: 4, col: 5, color: "black" });
+  });
+
+  it("reports escape when every surviving target fragment has more than two liberties", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[4][6] = "white";
+    const result = searchLadder(board, 4, 4, "black", {
+      targetStones: [[4, 4], [4, 6]],
+    });
     expect(result.status).toBe("escaped");
   });
 
