@@ -39,7 +39,13 @@ export default function App() {
   }
 
   function exportSgf() {
-    if (sgfRoot) {\n      const importedBlob = new Blob([serializeSgf(sgfRoot)], { type: "application/x-go-sgf;charset=utf-8" });\n      const importedUrl = URL.createObjectURL(importedBlob);\n      const importedLink = document.createElement("a"); importedLink.href = importedUrl; importedLink.download = "opengo-game.sgf"; importedLink.click();\n      URL.revokeObjectURL(importedUrl); setSgfMessage("SGF exported."); return;\n    }\n    const root: SgfNode = { properties: {
+    if (sgfRoot) {
+      const importedBlob = new Blob([serializeSgf(sgfRoot)], { type: "application/x-go-sgf;charset=utf-8" });
+      const importedUrl = URL.createObjectURL(importedBlob);
+      const importedLink = document.createElement("a"); importedLink.href = importedUrl; importedLink.download = "opengo-game.sgf"; importedLink.click();
+      URL.revokeObjectURL(importedUrl); setSgfMessage("SGF exported."); return;
+    }
+    const root: SgfNode = { properties: {
       GM: ["1"], FF: ["4"], CA: ["UTF-8"], SZ: [String(game.board.length)],
       KM: [String(game.komi)], RU: [game.scoringRule === "territory" ? "Japanese" : "Chinese"]
     }, children: [] };
