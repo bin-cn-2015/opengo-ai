@@ -43,3 +43,10 @@ This is not yet a full replacement for KataGo's `Board::calculateArea`. Suicide-
 ## V7 feature encoder integration
 
 The V7 encoder currently accepts ladder masks and area ownership as explicit inputs. These functions provide the rule-derived primitives, but the adapter that derives all four KataGo V7 ladder planes from current/recent board history is not yet complete. Do not substitute zero masks and claim exact model parity.
+
+
+## V7 feature adapter
+
+The runtime package now exposes `deriveV7RuleFeatures` to derive the current and two historical ladder masks and convert Benson pass-alive ownership into the V7 self/opponent encoding.
+
+The adapter requires an explicit `opponentEscape` mask. The current bounded TypeScript ladder reader does not yet implement KataGo's complete `iterLadders` escape-point output, so the adapter refuses to synthesize a zero plane and claim exact V7 parity. The caller must supply that plane from a compatible implementation until the TS escape-point search is completed.
