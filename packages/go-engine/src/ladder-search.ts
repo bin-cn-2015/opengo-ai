@@ -117,7 +117,7 @@ export function searchLadder(
       }
     }
 
-    const children: NodeResult[] = [];
+    const children: { move: string; result: NodeResult }[] = [];
     let legalMoves = 0;
     for (const move of candidates) {
       const [mr, mc] = move.split(",").map(Number);
@@ -125,35 +125,33 @@ export function searchLadder(
       const played = playMove(position, mr, mc, toMove);
       if (!played) continue;
       legalMoves += 1;
-      children.push(visit(played.board, otherColor(toMove), depth + 1));
+      children.push({ move, result: visit(played.board, otherColor(toMove), depth + 1) });
     }
 
     if (legalMoves === 0) {
       const terminal: NodeResult = toMove === attacker
-        ? { status: "captured", pv: [], reason: "ko-or-no-legal-move" }
-        : { status: "escaped", pv: [], reason: "ko-or-no-legal-move" };
+        ? { status: "escaped", pv: [], reason: "ko-or-no-legal-move" }
+        : { status: "captured", pv: [], reason: "ko-or-no-legal-move" };
       memo.set(key, terminal);
       return terminal;
     }
 
     // Attacker chooses a line proving capture; defender chooses any escape.
     const desired = toMove === attacker ? "captured" : "escaped";
-    const winningChild = children.find(child => child.status === desired);
+    const winningChild = children.find(child => child.result.status === desired);
     let result: NodeResult;
     if (winningChild) {
-      const chosenMoveIndex = children.indexOf(winningChild);
-      const chosenMove = [...candidates][chosenMoveIndex];
-      const [mr, mc] = chosenMove.split(",").map(Number);
+      const [mr, mc] = winningChild.move.split(",").map(Number);
       result = {
         status: desired,
-        pv: [{ row: mr, col: mc, color: toMove }, ...winningChild.pv],
-        reason: winningChild.reason,
+        pv: [{ row: mr, col: mc, color: toMove }, ...winningChild.result.pv],
+        reason: winningChild.result.reason,
       };
-    } else if (children.some(child => child.status === "unknown")) {
-      const uncertain = children.find(child => child.status === "unknown")!;
+    } else if (children.some(child => child.result.status === "unknown")) {
+      const uncertain = children.find(child => child.result.status === "unknown")!.result;
       result = { status: "unknown", pv: uncertain.pv, reason: uncertain.reason };
     } else {
-      const fallback = children[0];
+      const fallback = children[0].result;
       result = {
         status: toMove === attacker ? "escaped" : "captured",
         pv: fallback.pv,
