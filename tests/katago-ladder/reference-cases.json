@@ -96,7 +96,8 @@
     ],
     "attacker": "black",
     "firstPlayer": "attacker",
-    "expected": "escaped"
+    "expected": "escaped",
+    "typescriptExpected": "unknown"
   },
   {
     "id": "defender-sole-response-upper-bound-capture",
