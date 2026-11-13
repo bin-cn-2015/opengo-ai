@@ -128,6 +128,27 @@ describe("game state and turn handling", () => {
     expect(applyAction(game, { type: "play", row: 4, col: 4 })).not.toBeNull();
   });
 
+  it("rejects positional superko repetitions", () => {
+    const board = createBoard(9);
+    const candidate = playMove(board, 4, 4, "black")!.board;
+    const game = {
+      ...createGame(9, "positional"),
+      history: [boardKey(board), boardKey(candidate)]
+    };
+    expect(applyAction(game, { type: "play", row: 4, col: 4 })).toBeNull();
+  });
+
+  it("rejects situational superko repetitions", () => {
+    const board = createBoard(9);
+    const candidate = playMove(board, 4, 4, "black")!.board;
+    const repeatedSituation = `${boardKey(candidate)} white`;
+    const game = {
+      ...createGame(9, "situational"),
+      history: [`${boardKey(board)} black`, repeatedSituation]
+    };
+    expect(applyAction(game, { type: "play", row: 4, col: 4 })).toBeNull();
+  });
+
   it("uses situational history keys including the player to move", () => {
     const game = createGame(9, "situational");
     expect(game.history[0]).toBe(`${boardKey(game.board)} black`);
