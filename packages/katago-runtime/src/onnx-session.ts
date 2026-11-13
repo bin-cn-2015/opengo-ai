@@ -88,7 +88,7 @@ function asArrayBuffer(model: string | ArrayBuffer | Uint8Array): string | Array
   if (typeof model === "string" || model instanceof ArrayBuffer) return model;
   const copy = new Uint8Array(model.byteLength);
   copy.set(model);
-  return copy.buffer;
+  return copy.buffer as ArrayBuffer;
 }
 
 async function loadOrt(backend: InferenceBackend): Promise<OrtApi> {
@@ -214,6 +214,15 @@ export async function createKataGoOnnxSession(
       }
       if (inputs.mask.some(value => value !== 0 && value !== 1)) {
         throw new Error("InputMask values must be binary (0 or 1).");
+      }
+      for (let batch = 0; batch < batchSize; batch += 1) {
+        const spatialMaskOffset = batch * metadata.numInputChannels * boardArea;
+        const maskOffset = batch * boardArea;
+        for (let point = 0; point < boardArea; point += 1) {
+          if (inputs.spatial[spatialMaskOffset + point] !== inputs.mask[maskOffset + point]) {
+            throw new Error("InputSpatial channel 0 must exactly match InputMask.");
+          }
+        }
       }
       if (metadata.metaEncoderVersion > 0) {
         if (!inputs.meta) throw new Error("This model requires InputMeta features.");
