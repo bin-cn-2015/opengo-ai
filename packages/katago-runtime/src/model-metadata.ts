@@ -148,8 +148,8 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
     : positiveOrZero(metadata, "katago.metaEncoderVersion", 0);
 
   if (modelVersion >= 15) {
-    required(metadata, "katago.preferPassAliveUnderSuicideRules");
-    required(metadata, "katago.preferExcludeTerritoryAdjacentToAtari");
+    booleanValue(metadata, "katago.preferPassAliveUnderSuicideRules", false);
+    booleanValue(metadata, "katago.preferExcludeTerritoryAdjacentToAtari", false);
   }
   if (modelVersion >= 13) {
     for (const key of [
