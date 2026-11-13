@@ -17,7 +17,7 @@ export interface KataGoOnnxMetadata {
   nnXLen: number;
   nnYLen: number;
   requireExactNNLen: boolean;
-  hasTransformerBlocks: boolean;
+  hasTransformerBlocks?: boolean;
   hasNestedBottleneckBlocks?: boolean;
   sourceSha256?: string;
 }
@@ -181,7 +181,9 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
     nnXLen,
     nnYLen,
     requireExactNNLen: booleanValue(metadata, "katago.build.requireExactNNLen", false),
-    hasTransformerBlocks: booleanValue(metadata, "katago.info.arch.hasAnyTransformerBlocks", false),
+    hasTransformerBlocks: metadata["katago.info.arch.hasAnyTransformerBlocks"] === undefined
+      ? undefined
+      : booleanValue(metadata, "katago.info.arch.hasAnyTransformerBlocks", false),
     hasNestedBottleneckBlocks: metadata["katago.info.arch.hasAnyNestedBottleneckBlocks"] === undefined
       ? undefined
       : booleanValue(metadata, "katago.info.arch.hasAnyNestedBottleneckBlocks", false),
@@ -198,7 +200,7 @@ export function assertTargetTransformerV17(metadata: KataGoOnnxMetadata): void {
   if (metadata.modelVersion !== 17) {
     throw new ModelMetadataError(`The current Transformer acceptance target requires modelVersion 17; got ${metadata.modelVersion}.`);
   }
-  if (!metadata.hasTransformerBlocks || metadata.hasNestedBottleneckBlocks === false || !metadata.name.includes("tf3-b11c768")) {
+  if (metadata.hasTransformerBlocks === false || metadata.hasNestedBottleneckBlocks === false || !metadata.name.includes("tf3-b11c768")) {
     throw new ModelMetadataError(
       "The selected model does not identify itself as the tf3-b11c768 nested-bottleneck Transformer. Refusing to treat a legacy convnet as the v17 target.",
     );
