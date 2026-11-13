@@ -5,10 +5,10 @@ TypeScript-first browser runtime for official KataGo neural-network models. The 
 ## Implemented
 
 - Runtime API and model/analysis TypeScript contracts.
-- Explicit backend selection for WASM, WebGL and WebGPU (\`auto\`: WebGPU → WebGL → WASM).
+- Explicit backend selection for WASM, WebGL and WebGPU (`auto`: WebGPU → WebGL → WASM).
 - Strict application-level backend selection: an explicitly requested unavailable backend throws.
-- KataGo ONNX metadata parser for contract version 1, including model-version checks and rejection of unknown must-understand \`katago.*\` metadata keys.
-- v17 target guard for the \`tf3-b11c768\` nested-bottleneck Transformer family.
+- KataGo ONNX metadata parser for contract version 1, including model-version checks and rejection of unknown must-understand `katago.*` metadata keys.
+- v17 target guard for the `tf3-b11c768` nested-bottleneck Transformer family.
 - ONNX graph tensor-name, ordering, dtype and shape validation.
 - ONNX Runtime Web session adapter that binds KataGo float32 input tensors and returns the raw policy, value, score and ownership tensors.
 - ONNX graph inspection helper that exports operator/domain/opset inventory and metadata sidecars.
@@ -18,7 +18,7 @@ TypeScript-first browser runtime for official KataGo neural-network models. The 
 - V7 feature encoding from Go board history.
 - KataGo output-head semantic decoding (softmax, value perspective, score scaling, ownership transforms).
 - MCTS/PUCT search and KataGo analysis parity.
-- Automatic browser-side parsing of ONNX \`metadata_props\`; the current adapter consumes a JSON sidecar.
+- Automatic browser-side parsing of ONNX `metadata_props`; the current adapter consumes a JSON sidecar.
 - Full operator placement audit and numerical parity for the exact current Transformer graph on WebGPU and WebGL.
 - End-to-end reference comparison against official KataGo.
 
@@ -26,27 +26,27 @@ A successful ONNX session does **not** prove that all nodes ran on the selected 
 
 ## Dependencies
 
-The browser tensor runtime is [ONNX Runtime Web](https://www.npmjs.com/package/onnxruntime-web), pinned by the root package manifest to the stable \`^1.31.1\` release line. Its WASM, WebGL and WebGPU execution providers are selected explicitly by this package.
+The browser tensor runtime is [ONNX Runtime Web](https://www.npmjs.com/package/onnxruntime-web), pinned by the root package manifest to the stable `^1.31.1` release line. Its WASM, WebGL and WebGPU execution providers are selected explicitly by this package.
 
 ## Export and inspect a model
 
-Use KataGo 1.18+ to convert an official \`.bin.gz\` model offline:
+Use KataGo 1.18+ to convert an official `.bin.gz` model offline:
 
-\`\`\`sh
+```sh
 katago dumponnx -model model.bin.gz -out model.onnx
 python -m pip install onnx
 python scripts/inspect_katago_onnx.py model.onnx \\
   --report model.graph-report.json \\
   --metadata model.metadata.json
-\`\`\`
+```
 
 Do not commit model weights or generated multi-megabyte ONNX graphs. Keep the model file and its metadata sidecar together in the model distribution. Record the KataGo version, conversion flags and source model SHA-256 alongside the report.
 
-The metadata sidecar is required because the ONNX Runtime Web \`InferenceSession\` API exposes tensor names/shapes but not ONNX ModelProto \`metadata_props\`. The inspector extracts the exact values from the graph at build time.
+The metadata sidecar is required because the ONNX Runtime Web `InferenceSession` API exposes tensor names/shapes but not ONNX ModelProto `metadata_props`. The inspector extracts the exact values from the graph at build time.
 
 ## Create a session
 
-\`\`\`ts
+```ts
 import { createKataGoOnnxSession } from "@opengo-ai/katago-runtime";
 
 const session = await createKataGoOnnxSession({
@@ -69,7 +69,7 @@ const rawHeads = await session.run({
   mask,
 });
 await session.dispose();
-\`\`\`
+```
 
 ## Important backend limitation
 
