@@ -256,6 +256,41 @@ describe("ladder search", () => {
     expect(result.reason).toBe("ko-or-no-legal-move");
   });
 
+  it("applies KataGo's double-ko-death shortcut when both liberties are ko mouths", () => {
+    const board = createBoard(9);
+    // The corner target is a one-stone chain in atari. Both liberties are
+    // surrounded by white stones / board edges, with this target as the sole
+    // capturable one-stone chain. Filling either liberty leaves at most two
+    // liberties for the attacking stone.
+    board[0][0] = "white";
+    for (const [r, c] of [[0, 2], [1, 1], [2, 0]] as const) {
+      board[r][c] = "white";
+    }
+
+    const result = searchLadder(board, 0, 0, "black");
+    expect(result.status).toBe("captured");
+    expect(result.reason).toBe("captured");
+    expect(result.nodes).toBe(1);
+  });
+
+  it("does not apply the double-ko shortcut when only one liberty is a ko mouth", () => {
+    const board = createBoard(9);
+    board[0][0] = "white";
+    board[1][1] = "white";
+    board[2][0] = "white";
+    // The (0,1) liberty is no longer a ko mouth because (0,2) is empty.
+    let hookCalls = 0;
+
+    const result = searchLadder(board, 0, 0, "black", {
+      isLegalMove: () => {
+        hookCalls += 1;
+        return false;
+      },
+    });
+    expect(hookCalls).toBeGreaterThan(0);
+    expect(result.status).toBe("unknown");
+  });
+
   it("returns unknown rather than a false reading when a search budget is exhausted", () => {
     const board = createBoard(9);
     board[4][4] = "white";
