@@ -39,7 +39,9 @@ describe("parseKataGoOnnxMetadata", () => {
     const parsed = parseKataGoOnnxMetadata(baseMetadata);
     expect(parsed.modelVersion).toBe(17);
     expect(parsed.name).toContain("tf3-b11c768");
-    expect(parsed.hasTransformerBlocks).toBe(true);\n    expect(parsed.preferPassAliveUnderSuicideRules).toBe(false);\n    expect(parsed.preferExcludeTerritoryAdjacentToAtari).toBe(false);
+    expect(parsed.hasTransformerBlocks).toBe(true);
+    expect(parsed.preferPassAliveUnderSuicideRules).toBe(false);
+    expect(parsed.preferExcludeTerritoryAdjacentToAtari).toBe(false);
     expect(() => assertTargetTransformerV17(parsed)).not.toThrow();
   });
 
