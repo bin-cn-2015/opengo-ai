@@ -18,7 +18,7 @@ export interface LadderSearchOptions {
   isLegalMove?: (board: Board, row: number, col: number, color: Stone, path?: readonly string[]) => boolean;
   /** Start with the defender to move after an attacker-first setup move. */
   firstPlayer?: "attacker" | "defender";
-  /** Original target stones to keep tracking if an attacking move splits the chain. */
+  /** Original target points to track; may describe multiple disconnected groups. */
   targetStones?: readonly (readonly [number, number])[];
   /** Prior board/side keys, each encoded as boardKey(board) + "|" + side to move. */
   initialPath?: readonly string[];
