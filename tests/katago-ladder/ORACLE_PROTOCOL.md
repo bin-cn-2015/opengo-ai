@@ -15,7 +15,8 @@ Each request is one fixture object (see `oracle-case.schema.json`):
 - `target`: target point
 - `attacker`: attacking color
 - `firstPlayer`: `attacker` or `defender`
-- `expected` and `provenance`: corpus metadata; ignored by the oracle
+- `expected` and `provenance`: official-oracle expectation and source metadata
+- `typescriptExpected`: optional TypeScript tri-state expectation; ignored by the C++ oracle
 
 The adapter initializes KataGo's Zobrist hashes, overlays the complete setup
 with `Board::setStonesTolerant`, and then calls
