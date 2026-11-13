@@ -54,9 +54,9 @@ function adjacentPoints(row: number, col: number, size: number): [number, number
  * fragments supplied through targetStones.
  *
  * A capture proof is existential across those fragments: capturing any
- * originally surviving fragment proves "captured". Fragments with more than
- * two liberties are not searched as ladder candidates, but do not suppress
- * continued reading of other threatened fragments.
+ * originally surviving fragment proves "captured". Candidate liberty
+ * thresholds depend on the side to move (attacker: at most two; defender:
+ * at most one), and are evaluated independently for each target group.
  *
  * This is a bounded, rules-engine-level reader, not a full KataGo iterLadders
  * clone: it searches direct ladder extensions, captures of adjacent atari
