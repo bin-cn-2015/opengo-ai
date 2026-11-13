@@ -168,6 +168,23 @@ The existing Go rules package can be reused only after a parity audit for ko/sup
 - No model weights committed to Git.
 - No dropping WebGL from the acceptance criteria without an explicit product decision.
 
-## Honest status
+## Implementation status (updated after the first inference-layer commits)
 
-As of this document revision, the repository has no KataGo inference implementation and no ONNX Runtime Web dependency. The selected TypeScript architecture is a plan, not an implemented capability. The first code milestone is model conversion + ONNX graph compatibility inspection for the exact current transformer model.
+Implemented in `packages/katago-runtime`:
+- TypeScript runtime contracts and deterministic WASM/WebGL/WebGPU selection.
+- KataGo ONNX metadata contract parser, including modelVersion 17 target guard for the `tf3-b11c768` family.
+- ONNX input/output name, order, dtype and tensor-shape validation.
+- ONNX Runtime Web session loader that creates a session for the selected provider and binds KataGo float32 input tensors; raw policy/value/score/ownership heads are returned.
+- `scripts/inspect_katago_onnx.py` extracts the ONNX operator/domain/opset inventory and `katago.*` metadata into JSON reports/sidecars.
+- Root dependency `onnxruntime-web` is pinned to the stable 1.31.1 release line.
+
+Still not implemented or verified:
+- Actual export and inspection of the exact current official `kata1-tf3-b11c768-s12382M-d6533M` weights.
+- V7 feature encoding from board history.
+- KataGo output semantic decoding and numerical parity.
+- TypeScript MCTS/PUCT and analysis parity.
+- Full operator-placement audit and numerical parity for all three execution backends.
+
+Important: ONNX Runtime Web exposes tensor input/output metadata but not the ONNX ModelProto `metadata_props` through its browser `InferenceSession` API, so the current loader takes a sidecar emitted by the build-time inspection script. Selecting a GPU execution provider does not prove every node runs on that GPU; unsupported nodes may be partitioned to CPU. WebGPU/WebGL are not declared validated until the exact graph is audited and provider placement is verified.
+
+No KataGo C++ engine is linked or wrapped by the browser runtime.
