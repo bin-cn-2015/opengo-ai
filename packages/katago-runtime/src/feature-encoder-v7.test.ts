@@ -39,7 +39,6 @@ function emptyPosition(overrides: Partial<KataGoV7Position> = {}): KataGoV7Posit
       taxRule: "none",
       multiStoneSuicideLegal: false,
     },
-    komi: -7.5,
     selfKomi: -7.5,
     passWouldEndPhase: false,
     areaOwners: new Uint8Array(25),
