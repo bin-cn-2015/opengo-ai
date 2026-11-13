@@ -231,9 +231,12 @@ export function searchLadder(
 
   const firstPlayer = options.firstPlayer ?? "attacker";
   const initialPlayer = firstPlayer === "attacker" ? attacker : targetColor;
-  // The path contains ancestors only; including the current node here would
-  // incorrectly classify the root as an immediate repetition.
-  const result = visit(board, initialPlayer, 0, options.initialPath ?? []);
+  // Real game histories commonly include the current position as their last
+  // entry. The root itself is already reached and is not a repetition; only a
+  // move that recreates an earlier position is. Keep all other ancestors.
+  const rootStateKey = boardKey(board) + "|" + initialPlayer;
+  const initialPath = (options.initialPath ?? []).filter(key => key !== rootStateKey);
+  const result = visit(board, initialPlayer, 0, initialPath);
   return {
     status: result.status,
     target: { row, col },
