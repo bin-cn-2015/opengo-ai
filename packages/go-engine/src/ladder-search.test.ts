@@ -28,6 +28,24 @@ describe("ladder search", () => {
     expect(mask[4 * 9 + 4]).toBe(1);
   });
 
+
+  it("passes the current search path to the legality hook for ko-aware callers", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
+    board[5][4] = "black";
+    let observedPath: readonly string[] = [];
+    searchLadder(board, 4, 4, "black", {
+      isLegalMove: (_position, _row, _col, _color, path) => {
+        observedPath = path;
+        return true;
+      },
+    });
+    expect(observedPath.length).toBeGreaterThan(0);
+    expect(observedPath[0]).toContain("w");
+  });
+
   it("returns unknown rather than a false reading when a search budget is exhausted", () => {
     const board = createBoard(9);
     board[4][4] = "white";
