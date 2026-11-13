@@ -1,142 +1,173 @@
-# KataGo Browser Runtime: P0 Feasibility and Integration Decision
+# OpenGo AI: TypeScript KataGo Runtime Plan
 
 Date: 2026-11-13
 
-## Executive decision
+## Product decision (supersedes the earlier C++ fork recommendation)
 
-Do not implement KataGo's neural-network architecture or search from scratch in TypeScript yet.
+OpenGo AI's engine/runtime will be implemented and maintained in TypeScript. Do not adopt `saigo-online/katago-webgpu` or another KataGo C++ fork as the product runtime.
 
-The strongest candidate found is [saigo-online/katago-webgpu](https://github.com/saigo-online/katago-webgpu), a KataGo-derived C++ fork that adds:
-- a WebGPU neural-network backend using WGSL/Dawn;
-- a browser WASM build using Emscripten and Dawn's `emdawnwebgpu` port;
-- an Eigen CPU path intended to serve as a fallback;
-- a minimal `kataeval` C ABI for model loading and neural-net evaluation;
-- a separate threaded WASM build path that includes KataGo's actual search implementation.
+Hard requirements:
+- browser runtime API and orchestration in TypeScript;
+- WASM, WebGL and WebGPU execution backends;
+- latest official KataGo transformer network support, not only legacy convolutional networks;
+- official pretrained weights, no user training step;
+- real KataGo-compatible feature encoding, output decoding and search semantics;
+- worker-based analysis so inference/search do not block the UI.
 
-Its README and engineering log report parity checks against KataGo's Eigen reference, including transformer modelVersion 17. These are upstream project claims and still need to be reproduced in our own build/test environment before we treat them as verified OpenGo AI behavior.
+The previous C++ fork investigation remains historical research only. It is not the selected architecture.
 
-Candidate repository:
-- https://github.com/saigo-online/katago-webgpu
-- inspected commit: `d5ad1c0423dba989c60a2f06b1848e7eec2b5941` (2026-07-03)
-- license file states MIT for the repository's own content, with separate notices/licenses for bundled dependencies and files.
+## Current official target model
 
-## What the official model format means
+As checked 2026-11-13, the official kata1 networks page lists:
 
-KataGo's official `.bin.gz` is a native KataGo model format, not an ONNX file.
+`kata1-tf3-b11c768-s12382M-d6533M`
 
-KataGo 1.18.0+ provides:
-```bash
-katago dumponnx -model model.bin.gz -out model.onnx
-```
+Uploaded 2026-11-01. This is the current acceptance-test model, not a promise that every later model will load automatically.
 
-The official documentation explicitly says the TensorRT and ONNX Runtime backends translate `.bin.gz` into an ONNX graph; they do not feed the compressed native file directly to ONNX Runtime. CUDA, OpenCL, Eigen and Metal backends read `.bin.gz` directly.
+Architecture family: `tf3-b11c768`, model version 17:
+- 11 nested bottleneck transformer blocks, with 3 inner transformer blocks per NBT3 block;
+- trunk width 768, bottleneck width 384;
+- 12 attention heads, head dimension 32;
+- learned two-dimensional RoPE;
+- SwiGLU feed-forward blocks, hidden width 1152;
+- SiLU activations;
+- RMSNorm in attention/feed-forward sublayers;
+- convolutional stem and KataGo policy/value/score/ownership heads.
 
-Even a valid ONNX graph is not sufficient by itself: KataGo-specific metadata defines the model version, feature encoding, output channel counts, board-buffer size, and output post-processing. A generic ONNX inference wrapper would still need KataGo-compatible input feature generation and output decoding.
-
-Official reference:
-- https://github.com/lightvector/KataGo/blob/master/docs/ONNX_Model_Files.md
-- https://github.com/lightvector/KataGo/blob/master/cpp/neuralnet/modelversion.cpp
-
-The inspected official model-version source currently declares:
-- supported model versions: 3 through 17;
-- latest input feature version: V7;
-- model versions 8–17 use V7 input features.
-
-For the currently documented v17 contract, the ordinary model input has 22 spatial channels and 19 global channels; the actual model header/metadata must be read rather than hard-coded as a universal rule.
-
-## Current official model generation
-
-The official KataGo network listing currently identifies `kata1-tf3-b11c768-s12382M-d6533M` as the latest network (uploaded 2026-11-01). The current strongest family is transformer-based.
-
-This matters because compatibility with an older g170 convolutional model is not sufficient evidence that a runtime can load the current official network. The candidate fork reports support through modelVersion 17, including transformer blocks, RoPE, SwiGLU, RMSNorm and grouped-query attention, but it also explicitly rejects some configurations (including grouped RMSNorm and nonzero SGF metadata encoder versions).
-
-Therefore, loading the exact current official network is a required P0 test. Do not label “all official models supported” based only on a small v17 test network.
-
-Official network listing:
-- https://katagotraining.org/networks/
-
-## Candidate runtime assessment
-
-| Capability | Candidate status | OpenGo AI decision |
-|---|---|---|
-| Read official `.bin.gz` | Candidate uses KataGo's native C++ model loader | Test with a downloaded official model |
-| WASM CPU inference | Candidate builds Eigen CPU into WASM | First fallback target |
-| WebGPU inference | Candidate adds WGSL/Dawn backend | Preferred browser acceleration target |
-| WebGL inference | No WebGL backend identified in candidate | Not available in P0; evaluate separately |
-| KataGo MCTS/search | Candidate documents a threaded WASM build including KataGo's real Search/AsyncBot | Prefer this over a new TS search implementation, subject to reproduction |
-| PV / candidate moves | Candidate demo reports search stream and PV | Validate output semantics and API |
-| Current largest v17 model | Candidate claims broad v17 support but lists unsupported model features | Explicit compatibility gate; not yet verified |
-| Web worker execution | Candidate uses pthread workers for threaded build | Required to keep analysis off the UI thread |
-
-### Why ONNX Runtime Web is not the default path
-
-ONNX Runtime Web supports WASM and WebGPU, but WebGPU operator coverage is a subset of the ONNX operator set. Its WebGL backend is legacy/maintenance-oriented, and the ONNX Runtime repository has a design proposal to remove it in favor of WebGPU or WASM.
-
-This makes ONNX attractive as an interoperability route, but not the shortest path to complete KataGo compatibility. The native KataGo C++ path already knows how to parse `.bin.gz`, build features, decode heads, and perform search.
+The implementation must read model metadata and reject unsupported configurations explicitly. Do not infer the architecture from a filename alone.
 
 References:
-- https://onnxruntime.ai/docs/get-started/with-javascript/web.html
-- https://onnxruntime.ai/docs/tutorials/web/
-- https://github.com/microsoft/onnxruntime/blob/main/docs/design/onnxruntime_web_remove_webgl_backend.md
+- https://katagotraining.org/networks/
+- https://github.com/lightvector/KataGo/blob/master/docs/NetworkArchitectures.md
+- https://github.com/lightvector/KataGo/blob/master/cpp/neuralnet/modelversion.cpp
 
-## P0 decision matrix
+## License
 
-| Route | Native `.bin.gz` | WASM | WebGPU | WebGL | Search semantics | Decision |
-|---|---|---|---|---|---|---|
-| Reimplement network + search in TS | Must build parser and all architecture/features | Custom | Custom | Custom | Must reimplement | Reject for now: highest correctness risk |
-| Convert to ONNX + ONNX Runtime Web | Requires official `dumponnx` conversion first | Yes | Yes, operator subset | Legacy/at risk | Search still separate | Keep as fallback experiment, not primary |
-| Adapt `katago-webgpu` C++ fork | Candidate already uses native loader | Yes | Yes | No identified backend | Candidate includes a real-search threaded build | Recommended P0 path |
+The official kata1 network weights are covered by the KataGo Neural Network License, a permissive MIT-style license. It requires retaining the copyright and permission notice. The current listing's exact network is in the kata1 run, so this license applies.
 
-## P0 verification checklist
+The KataGo engine/source repository is also permissively licensed for its own content, with separately licensed bundled dependencies and explicitly attributed third-party code. If we port algorithms or reuse source fragments, preserve the relevant notices and audit each file's provenance. A clean-room TypeScript implementation based on documented behavior should keep its own license and attribution records clear.
 
-No feature should be marked supported until these checks pass in this repository or in a reproducible CI workflow.
+Do not assume all third-party networks on the extra_networks page share the same license. Check each model's attribution and license before offering it in the model catalog.
 
-1. Pin the candidate fork to a reviewed commit; record its upstream base and license notices.
-2. Build its single-thread WASM target with the Eigen backend and load an official `.bin.gz` model.
-3. Evaluate fixed positions and compare policy/value/score/ownership tensors with the same KataGo version's Eigen reference.
-4. Build the WebGPU WASM target and compare outputs against the CPU path on a real browser GPU.
-5. Download the exact current official network from the official network listing and attempt model load + evaluation. Record any rejected metadata/architecture features.
-6. Build the threaded WASM search target in a Web Worker. Compare best move, visits, winrate, score and PV against native KataGo analysis on identical positions/configuration.
-7. Measure model download size, peak WASM memory, startup time, NN evaluations/sec and search visits/sec on representative desktop and mobile devices.
-8. Only after those pass, expose a stable TypeScript API from `packages/katago-runtime`.
+References:
+- https://katagotraining.org/network_license/
+- https://github.com/lightvector/KataGo/blob/master/LICENSE
 
-## WebGL policy
+## Selected technical architecture
 
-Do not block the core runtime on WebGL.
+### TypeScript engine layer
 
-WebGL is not an interchangeable drop-in for WebGPU: it has a different operator/runtime implementation and the candidate C++ fork currently documents WebGPU plus Eigen/WASM, not WebGL. ONNX Runtime's WebGL path is legacy and has a removal proposal. If WebGL remains a hard product requirement, it needs a separate technical spike and compatibility suite; the honest fallback in P0 is WASM CPU.
+Create a standalone package `packages/katago-runtime`, independent of React. It owns:
+- model manifest/metadata and version compatibility;
+- KataGo model import/validation pipeline;
+- V7 feature generation and history-sensitive board inputs;
+- inference session lifecycle and backend selection;
+- output-head decoding (policy, value, score, ownership, optional auxiliary heads);
+- legal move filtering and KataGo-compatible MCTS/PUCT/search policy;
+- analysis result streaming, PV, visits, winrate and score;
+- Web Worker protocol and cancellation/disposal.
 
-## Proposed integration boundary
+No C++ KataGo engine is linked into the browser product.
 
-Keep the engine/runtime independent from React:
+### Tensor execution layer
+
+First P0 candidate: ONNX Runtime Web, called from TypeScript, using its WASM, WebGL and WebGPU execution providers. This is a TypeScript-facing browser runtime, not the KataGo C++ engine.
+
+Official KataGo provides `dumponnx` (KataGo 1.18+) to turn a native `.bin.gz` into the ONNX graph used by its ONNX backend. This is a conversion/build-time tool, not part of browser inference. For the first proof, allow a reproducible conversion step in CI/dev tooling, then load the resulting ONNX file in the TypeScript browser runtime.
+
+Important distinction:
+- browser inference and search remain TypeScript + ONNX Runtime Web;
+- the first model conversion may use the official KataGo `dumponnx` executable;
+- if the project later requires a completely TypeScript-only model-import pipeline, implement a TypeScript parser/graph exporter for the native model format as a separate milestone. Do not pretend this exists now.
+
+Official model conversion documentation:
+- https://github.com/lightvector/KataGo/blob/master/docs/ONNX_Model_Files.md
+
+### Backend contract
+
+Expose all three as explicit selectable backends:
 
 ```ts
-export type Backend = "auto" | "webgpu" | "wasm";
+export type Backend = "auto" | "wasm" | "webgl" | "webgpu";
+
+export interface RuntimeOptions {
+  backend: Backend;
+  model: string | ArrayBuffer;
+  boardSize?: number;
+}
 
 export interface KataGoRuntime {
-  load(modelUrl: string): Promise<void>;
-  analyze(request: {
-    board: Int8Array;
-    boardSize: number;
-    toMove: "black" | "white";
-    komi: number;
-    rules: string;
-    visits: number;
-    variations: number;
-  }): Promise<AnalysisResult>;
+  load(): Promise<ModelInfo>;
+  analyze(request: AnalyzeRequest): AsyncIterable<AnalysisUpdate>;
   dispose(): Promise<void>;
 }
 ```
 
-This is a target interface only. It is not implemented yet. The actual ABI must be designed after inspecting the candidate's C ABI and search worker protocol; avoid freezing an API that cannot represent KataGo's rules, history, and analysis semantics.
+`auto` should probe WebGPU first, then WebGL, then WASM. Explicit backend selection must fail with a useful compatibility error instead of silently switching.
 
-## Scope guard
+WASM is the correctness/reference fallback and must support the full operator graph. WebGPU is the preferred accelerated backend where available. WebGL is a hard requirement but must be treated as a separate compatibility/performance target: ONNX Runtime's current documentation describes WebGL as maintenance mode. We must pin and test a supported ORT version, and be prepared to implement custom WebGL kernels or a backend adapter for any unsupported ONNX nodes. Never claim WebGL support just because a WebGL session can be created.
 
-Until the P0 verification is complete:
-- do not add more board UI, SGF features, scoring features, or game-review features;
-- do not add a TypeScript MCTS and call it KataGo search;
-- do not add ONNX Runtime merely because it can run browser models;
-- do not commit large model weights to this repository;
-- do not claim WebGL, current-model compatibility, or full analysis support without passing tests.
+Official runtime references:
+- https://onnxruntime.ai/docs/get-started/with-javascript/web.html
+- https://onnxruntime.ai/docs/tutorials/web/
+- https://github.com/microsoft/onnxruntime/blob/main/js/web/docs/webgpu-operators.md
+- https://github.com/microsoft/onnxruntime/blob/main/js/web/docs/webgl-operators.md
 
-The next implementation task is a reproducible WASM build/load/evaluate proof using a small official model first, followed by the exact current official transformer model.
+## Transformer compatibility risks
+
+The latest tf3 model requires more than generic convolution support:
+- nested bottleneck residual structure;
+- 2D learned RoPE;
+- multi-head self-attention;
+- RMSNorm;
+- SwiGLU;
+- SiLU;
+- model-version-17 feature and output contracts.
+
+ONNX Runtime Web documents that WASM supports all ONNX operators, while WebGL and WebGPU support subsets. WebGL is maintenance mode. The WebGPU operator table includes MatMul and other building blocks, but the exact graph emitted by KataGo's `dumponnx` must be inspected against both GPU provider operator tables.
+
+P0 must export the exact current tf3 model and inspect every ONNX node/domain/opset. If the graph uses a fused/custom operator unavailable on WebGL or WebGPU, either:
+1. change the export graph to decompose it into standard supported ONNX operations; or
+2. implement and test a custom provider kernel; or
+3. use a TypeScript tensor-graph implementation for that operation.
+
+No backend is considered supported until the same fixed test positions produce outputs within documented numeric tolerances of the WASM reference and the native official KataGo reference.
+
+## Search implementation
+
+Inference is not the full KataGo analysis engine. Implement the search layer in TypeScript after inference parity:
+- board history and rules-aware legality;
+- policy priors and value/score interpretation;
+- batched leaf evaluation;
+- PUCT selection and backup;
+- root noise/temperature only where the selected analysis/play mode requires it;
+- tree reuse, stop/cancel, analysis streaming;
+- candidate-move statistics and principal variations.
+
+The existing Go rules package can be reused only after a parity audit for ko/superko, rulesets, pass handling, history features and board sizes. Search must not be described as KataGo-equivalent until matched against official KataGo analysis on fixed fixtures.
+
+## P0 implementation gates
+
+1. Create `packages/katago-runtime` with backend abstraction and model metadata types.
+2. Obtain one small official v17 transformer model and the exact current tf3-b11c768 model; do not commit weights.
+3. Convert both with the official `dumponnx` tool and archive conversion commands, tool version and SHA-256 hashes.
+4. Inspect ONNX metadata, inputs, outputs, opsets and all node/operator domains. Produce a machine-readable compatibility report for WASM, WebGL and WebGPU.
+5. Run one inference in WASM and compare all heads against official KataGo reference output.
+6. Run the same fixture in WebGPU and WebGL. Compare outputs to WASM within explicit tolerances. Fix missing operators rather than silently falling back.
+7. Implement TypeScript feature encoding and verify tensor parity against official KataGo-generated inputs.
+8. Implement TypeScript output decoding and compare policy/value/score/ownership semantics.
+9. Implement TypeScript search, then compare visits, candidate ranking, winrate/score and PV against official KataGo. Document expected nondeterminism and tolerances.
+10. Add CI tests for all exportable operator graphs and runtime smoke tests. Browser GPU integration tests may use a dedicated browser runner.
+
+## Non-goals until inference parity
+
+- No further board UI, SGF or scoring features.
+- No C++ KataGo runtime or C++ search engine in the shipped browser application.
+- No hand-written approximation of the transformer.
+- No support claim based only on model metadata parsing or successful ONNX session creation.
+- No model weights committed to Git.
+- No dropping WebGL from the acceptance criteria without an explicit product decision.
+
+## Honest status
+
+As of this document revision, the repository has no KataGo inference implementation and no ONNX Runtime Web dependency. The selected TypeScript architecture is a plan, not an implemented capability. The first code milestone is model conversion + ONNX graph compatibility inspection for the exact current transformer model.
