@@ -38,7 +38,7 @@ describe("ladder search", () => {
     let observedPath: readonly string[] = [];
     searchLadder(board, 4, 4, "black", {
       isLegalMove: (_position, _row, _col, _color, path) => {
-        observedPath = path;
+        observedPath = path ?? [];
         return true;
       },
     });
