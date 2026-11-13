@@ -1,10 +1,17 @@
 import { useMemo, useState } from "react";
-import { applyAction, calculateScore, createGame, getTerritory, isGameOver, setScoringConfig, toggleDeadGroup, type GameState, type ScoringRule } from "../packages/go-engine/src";
+import type { ChangeEvent } from "react";
+import { applyAction, calculateScore, createGame, getTerritory, isGameOver, setScoringConfig, toggleDeadGroup, type GameState, type ScoringRule, type Stone } from "../packages/go-engine/src";
+import { parseSgf, replaySgf, serializeSgf, type SgfNode } from "../packages/go-engine/src/sgf";
 
 const SIZE = 19;
 
 export default function App() {
   const [game, setGame] = useState<GameState>(() => createGame(SIZE));
+  const [sgfRoot, setSgfRoot] = useState<SgfNode | null>(null);
+  const [reviewStates, setReviewStates] = useState<GameState[] | null>(null);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [moveLog, setMoveLog] = useState<{ color: Stone; row: number; col: number }[]>([]);
+  const [sgfMessage, setSgfMessage] = useState("");
   const points = useMemo(() => Array.from({ length: SIZE }, (_, i) => i), []);
   const board = game.board;
   const finished = isGameOver(game);
@@ -13,12 +20,57 @@ export default function App() {
 
   function reset() {
     setGame(createGame(SIZE));
+    setSgfRoot(null); setReviewStates(null); setReviewIndex(0); setMoveLog([]); setSgfMessage("");
+  }
+
+  function importSgf(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    void file.text().then((source) => {
+      const replay = replaySgf(parseSgf(source).games[0]);
+      setGame(replay.initial); setSgfRoot(replay.root);
+      setReviewStates(replay.states); setReviewIndex(0);
+      setMoveLog(replay.moves.map(({color,row,col}) => ({color,row,col})));
+      setSgfMessage("Loaded " + replay.moves.length + " moves · " + replay.initial.board.length + "×" + replay.initial.board.length);
+    }).catch((error: unknown) => {
+      setSgfMessage(error instanceof Error ? error.message : "Unable to read SGF file.");
+    });
+    event.target.value = "";
+  }
+
+  function exportSgf() {
+    const root: SgfNode = sgfRoot ?? { properties: {
+      GM: ["1"], FF: ["4"], CA: ["UTF-8"], SZ: [String(game.board.length)],
+      KM: [String(game.komi)], RU: [game.scoringRule === "territory" ? "Japanese" : "Chinese"]
+    }, children: [] };
+    const nodes: SgfNode[] = moveLog.map((move) => ({
+      properties: { [move.color === "black" ? "B" : "W"]: [move.row < 0 ? "" : String.fromCharCode(97 + move.col, 97 + move.row)] },
+      children: []
+    }));
+    const exportRoot: SgfNode = { properties: { ...root.properties }, children: [] };
+    let tail = exportRoot;
+    for (const node of nodes) { tail.children.push(node); tail = node; }
+    const blob = new Blob([serializeSgf(exportRoot)], { type: "application/x-go-sgf;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a"); link.href = url; link.download = "opengo-game.sgf"; link.click();
+    URL.revokeObjectURL(url);
+    setSgfMessage("SGF exported.");
+  }
+
+  function stepReview(delta: number) {
+    if (!reviewStates) return;
+    const next = Math.max(0, Math.min(reviewStates.length - 1, reviewIndex + delta));
+    setReviewIndex(next); setGame(reviewStates[next]);
   }
 
   function play(row: number, col: number) {
     if (finished) { setGame(toggleDeadGroup(game, row, col)); return; }
     const next = applyAction(game, { type: "play", row, col });
-    if (next) setGame(next);
+    if (next) {
+      setGame(next);
+      setMoveLog((moves) => [...moves.slice(0, reviewIndex), { color: game.toMove, row, col }]);
+      setReviewStates(null); setSgfRoot(null); setReviewIndex(0);
+    }
   }
 
   function configureScoring(rule: ScoringRule, komi: number) {
@@ -27,7 +79,11 @@ export default function App() {
 
   function pass() {
     const next = applyAction(game, { type: "pass" });
-    if (next) setGame(next);
+    if (next) {
+      setGame(next);
+      setMoveLog((moves) => [...moves.slice(0, reviewIndex), { color: game.toMove, row: -1, col: -1 }]);
+      setReviewStates(null); setSgfRoot(null); setReviewIndex(0);
+    }
   }
 
   return (
@@ -60,13 +116,24 @@ export default function App() {
           <div className="board-footer">
             <span>BLACK <b>{game.captures.black} captures</b></span>
             <span>WHITE <b>{game.captures.white} captures</b></span>
-            <button onClick={pass} disabled={finished}>PASS</button>
+            <button onClick={pass} disabled={finished || !!reviewStates}>PASS</button>
             <button onClick={reset}>RESET GAME ↺</button>
           </div>
         </div>
         <aside className="side-panel">
           <div className="turn-card"><span className="eyebrow">{finished ? "GAME FINISHED" : "TO PLAY"}</span><div className="turn-line">{!finished && <span className={`turn-stone ${game.toMove}`} />}<strong>{finished ? "Two passes" : game.toMove === "black" ? "Black" : "White"}</strong></div><p>{finished ? "Both players passed. Scoring is the next milestone." : "Take your turn on the board."}</p></div>
-          <div className="feature-card"><span className="eyebrow">PROJECT ROADMAP</span><ul><li className="done">Repository bootstrap</li><li className="done">Core board rules & passes</li><li className="active">Rule edge cases & scoring</li><li>PUCT / MCTS search</li><li>KataGo model adapter</li><li>WebGPU · WebGL · WASM</li><li>SGF review & analysis</li></ul></div>
+          <div className="feature-card"><span className="eyebrow">PROJECT ROADMAP</span><ul><li className="done">Repository bootstrap</li><li className="done">Core board rules & passes</li><li className="active">Rule edge cases & scoring</li><li>PUCT / MCTS search</li><li>KataGo model adapter</li><li>WebGPU · WebGL · WASM</li><li className="done">SGF import · export · replay</li></ul></div>
+          <div className="feature-card sgf-card">
+            <span className="eyebrow">SGF · GAME RECORD</span>
+            <label className="sgf-import">IMPORT SGF<input type="file" accept=".sgf,application/x-go-sgf,text/plain" onChange={importSgf} /></label>
+            <button className="sgf-export" onClick={exportSgf}>EXPORT SGF ↓</button>
+            <div className="review-controls">
+              <button onClick={() => stepReview(-1)} disabled={!reviewStates || reviewIndex === 0}>← BACK</button>
+              <span>{reviewStates ? reviewIndex + " / " + (reviewStates.length - 1) : "LIVE GAME"}</span>
+              <button onClick={() => stepReview(1)} disabled={!reviewStates || reviewIndex >= reviewStates.length - 1}>NEXT →</button>
+            </div>
+            {sgfMessage && <p className="sgf-message">{sgfMessage}</p>}
+          </div>
           <div className="feature-card scoring-card">
             <span className="eyebrow">SCORING SETTINGS</span>
             <label>Rule<select value={game.scoringRule} onChange={(e) => configureScoring(e.target.value as ScoringRule, game.komi)}><option value="area">Chinese · Area</option><option value="territory">Japanese · Territory</option></select></label>
