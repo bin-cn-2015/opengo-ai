@@ -31,3 +31,17 @@ export type {
   ModelInfo,
   RuntimeOptions,
 } from "./types";
+
+export { encodeKataGoV7 } from "./feature-encoder-v7";
+export type {
+  EncodedKataGoV7Inputs,
+  KataGoV7Position,
+  V7Color,
+  V7KoRule,
+  V7LadderMasks,
+  V7Move,
+  V7Rules,
+  V7ScoringRule,
+  V7Stone,
+  V7TaxRule,
+} from "./feature-encoder-v7";
