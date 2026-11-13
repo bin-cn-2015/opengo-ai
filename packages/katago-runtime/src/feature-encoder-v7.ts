@@ -111,7 +111,6 @@ function libertiesByPoint(board: Uint8Array, width: number, height: number): Uin
   const result = new Uint8Array(board.length);
   const visited = new Uint8Array(board.length);
   const queue = new Int32Array(board.length);
-  const liberties = new Uint8Array(board.length);
 
   for (let start = 0; start < board.length; start += 1) {
     const color = board[start];
@@ -304,7 +303,10 @@ export function encodeKataGoV7(
   }
 
   // Match KataGo's history visibility and phase cap.
-  if (position.maxHistory !== undefined && (!Number.isInteger(position.maxHistory) || position.maxHistory < 0 || position.maxHistory > 5)) {\n    throw new RangeError("maxHistory must be an integer between 0 and 5.");\n  }\n  let maxHistory = position.suppressHistory ? 0 : 5;
+  if (position.maxHistory !== undefined && (!Number.isInteger(position.maxHistory) || position.maxHistory < 0 || position.maxHistory > 5)) {
+    throw new RangeError("maxHistory must be an integer between 0 and 5.");
+  }
+  let maxHistory = position.suppressHistory ? 0 : 5;
   if (!position.suppressHistory && position.gameFinishedOrPastPhaseEnd) maxHistory = 1;
   maxHistory = Math.min(maxHistory, position.maxHistory ?? 5, position.validTurnsThisPhase);
   const recentMoves = maxHistory > 0 ? position.moves.slice(-maxHistory).reverse() : [];
