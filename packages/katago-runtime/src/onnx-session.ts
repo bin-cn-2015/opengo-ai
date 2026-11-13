@@ -209,6 +209,12 @@ export async function createKataGoOnnxSession(
       assertLength("InputSpatial", inputs.spatial, batchSize * metadata.numInputChannels * boardArea);
       assertLength("InputGlobal", inputs.global, batchSize * metadata.numInputGlobalChannels);
       assertLength("InputMask", inputs.mask, batchSize * boardArea);
+      if (metadata.requireExactNNLen && inputs.mask.some(value => value !== 1)) {
+        throw new Error("This ONNX graph requires an exact full-size board buffer; InputMask must contain only 1s.");
+      }
+      if (inputs.mask.some(value => value !== 0 && value !== 1)) {
+        throw new Error("InputMask values must be binary (0 or 1).");
+      }
       if (metadata.metaEncoderVersion > 0) {
         if (!inputs.meta) throw new Error("This model requires InputMeta features.");
         assertLength("InputMeta", inputs.meta, batchSize * metadata.numInputMetaChannels);
