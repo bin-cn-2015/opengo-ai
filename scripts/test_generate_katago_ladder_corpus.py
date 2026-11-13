@@ -36,10 +36,16 @@ class GeneratedLadderCorpusTests(unittest.TestCase):
                 case["tacticalFeatures"],
                 generator.classify_tactical_features(board, tuple(case["target"]), case["attacker"]),
             )
-            self.assertIn(
-                "edge-band-target" if case["targetRegion"] != "interior" else "target-two-liberties" if case["targetLibertiesAtRoot"] == 2 else f"target-{case['targetLibertiesAtRoot']}-liberties" if case["targetLibertiesAtRoot"] == 3 else "target-in-atari",
-                case["tacticalFeatures"],
-            )
+            expected_liberty_feature = {
+                1: "target-in-atari",
+                2: "target-two-liberties",
+                3: "target-three-liberties",
+            }[case["targetLibertiesAtRoot"]]
+            self.assertIn(expected_liberty_feature, case["tacticalFeatures"])
+            if case["targetRegion"] != "interior":
+                self.assertIn("edge-band-target", case["tacticalFeatures"])
+            if case["targetRegion"] == "corner-band":
+                self.assertIn("corner-band-target", case["tacticalFeatures"])
 
 
 if __name__ == "__main__":
