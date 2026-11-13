@@ -79,6 +79,26 @@ describe("ladder search", () => {
     expect(result.status).toBe("escaped");
   });
 
+  it("finds a snapback-style countercapture of an adjacent attacking stone in atari", () => {
+    // The black stone at (4,5) is the just-played attack. White can capture
+    // it at (5,5), reopening a third liberty for the original target stone.
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[4][5] = "black";
+    board[3][5] = "white";
+    board[4][6] = "white";
+
+    const result = searchLadder(board, 4, 4, "black", {
+      firstPlayer: "defender",
+      targetStones: [[4, 4]],
+      isLegalMove: (_position, row, col, color) =>
+        color === "white" && row === 5 && col === 5,
+    });
+
+    expect(result.status).toBe("escaped");
+    expect(result.principalVariation[0]).toEqual({ row: 5, col: 5, color: "white" });
+  });
+
   it("does not claim capture when the defender has no local candidate accepted by the legality hook", () => {
     const board = createBoard(9);
     board[4][4] = "white";
