@@ -20,6 +20,8 @@ export interface LadderSearchOptions {
   firstPlayer?: "attacker" | "defender";
   /** Original target stones to keep tracking if an attacking move splits the chain. */
   targetStones?: readonly (readonly [number, number])[];
+  /** Prior board/side keys, each encoded as boardKey(board) + "|" + side to move. */
+  initialPath?: readonly string[];
 }
 
 export interface LadderSearchResult {
@@ -183,7 +185,7 @@ export function searchLadder(
   const initialPlayer = firstPlayer === "attacker" ? attacker : targetColor;
   // The path contains ancestors only; including the current node here would
   // incorrectly classify the root as an immediate repetition.
-  const result = visit(board, initialPlayer, 0, []);
+  const result = visit(board, initialPlayer, 0, options.initialPath ?? []);
   return {
     status: result.status,
     target: { row, col },
@@ -252,7 +254,7 @@ export function findLadderEscapePoints(
       for (const liberty of group.liberties) {
         const [attackRow, attackCol] = liberty.split(",").map(Number);
         if (options.isLegalMove &&
-            !options.isLegalMove(board, attackRow, attackCol, attacker)) continue;
+            !options.isLegalMove(board, attackRow, attackCol, attacker, options.initialPath ?? [])) continue;
         const played = playMove(board, attackRow, attackCol, attacker);
         if (!played) continue;
 
