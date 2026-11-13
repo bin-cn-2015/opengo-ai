@@ -7,6 +7,14 @@ describe("ladder search", () => {
     expect(() => searchLadder(createBoard(9), 0, 0, "black")).toThrow(/opponent stone/);
   });
 
+  it("rejects an original target list when every listed stone has already disappeared", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    expect(() => searchLadder(board, 4, 4, "black", {
+      targetStones: [[0, 0], [0, 1]],
+    })).toThrow(/at least one surviving opponent stone/);
+  });
+
   it("reports an already captured target as invalid input only when no stone is present", () => {
     const board = createBoard(9);
     board[4][4] = "white";
