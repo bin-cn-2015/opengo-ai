@@ -63,7 +63,7 @@ describe("parseKataGoOnnxMetadata", () => {
       ...baseMetadata,
       "katago.info.arch.hasAnyNestedBottleneckBlocks": "false",
     });
-    expect(() => assertTargetTransformerV17(parsed)).toThrow(/not identified/);
+    expect(() => assertTargetTransformerV17(parsed)).toThrow(/does not identify/);
   });
 
   it("requires the exact-board-buffer metadata and consistent meta encoder channels", () => {
