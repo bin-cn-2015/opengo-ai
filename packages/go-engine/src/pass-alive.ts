@@ -34,9 +34,9 @@ interface CandidateRegion {
 }
 
 function neighbors(row: number, col: number, size: number): [number, number][] {
-  return [
+  return ([
     [row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1],
-  ].filter(([r, c]) => r >= 0 && c >= 0 && r < size && c < size);
+  ] as [number, number][]).filter(([r, c]) => r >= 0 && c >= 0 && r < size && c < size);
 }
 
 function collectChains(board: Board): { chains: Chain[]; groupAt: number[][] } {
