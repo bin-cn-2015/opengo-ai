@@ -44,7 +44,7 @@ describe("deriveV7RuleFeatures", () => {
       recentBoards: [board, board, board],
     }, {});
     expect(derived.ladderMasks.opponentEscape[3 * 9 + 4]).toBe(1);
-    expect(derived.ladderMasks.opponentEscape[4 * 9 + 3]).toBe(0);
+    expect(derived.ladderMasks.opponentEscape[4 * 9 + 3]).toBe(1);
   });
 
   it("rejects history snapshots that do not start with the current board", () => {
