@@ -38,5 +38,6 @@ afterAll(() => {
       `KataGo generated differential: ${generatedLadderCases.length - divergences.length}/${generatedLadderCases.length} exact status matches; ${divergences.length} semantic/resource divergences`,
     );
     for (const divergence of divergences.slice(0, 20)) console.info(`  ${divergence}`);
+    expect(divergences, "generated TS statuses must match the pinned KataGo oracle").toEqual([]);
   }
 });
