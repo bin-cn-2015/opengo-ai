@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardKey, createBoard } from "./index";
+import { boardKey, createBoard, playMove } from "./index";
 import { findLadderedStones, findLadderEscapePoints, searchLadder } from "./ladder-search";
 
 describe("ladder search", () => {
@@ -72,6 +72,26 @@ describe("ladder search", () => {
     });
     expect(result.status).toBe("captured");
     expect(result.principalVariation[0]).toEqual({ row: 4, col: 5, color: "black" });
+  });
+
+  it("returns unknown when a searched move recreates an earlier situational position", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
+    board[5][4] = "black";
+    const afterCapture = playMove(board, 4, 5, "black");
+    expect(afterCapture).not.toBeNull();
+
+    const result = searchLadder(board, 4, 4, "black", {
+      initialPath: [
+        boardKey(board) + "|black",
+        boardKey(afterCapture!.board) + "|white",
+      ],
+    });
+
+    expect(result.status).toBe("unknown");
+    expect(result.reason).toBe("ko-or-no-legal-move");
   });
 
   it("keeps reading a threatened fragment when another target fragment has more than two liberties", () => {
