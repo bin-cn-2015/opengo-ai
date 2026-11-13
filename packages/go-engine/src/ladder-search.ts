@@ -164,13 +164,17 @@ export function searchLadder(
 
     const children: { move: string; result: NodeResult }[] = [];
     let legalMoves = 0;
+    let rejectedByHistoryPolicy = false;
     // A legality hook needs the current position as part of the history when
     // validating the next move (superko checks compare the resulting board
     // against all positions already reached, including this one).
     const movePath = [...path, positionKey + "|" + toMove];
     for (const move of candidates) {
       const [mr, mc] = move.split(",").map(Number);
-      if (options.isLegalMove && !options.isLegalMove(position, mr, mc, toMove, movePath)) continue;
+      if (options.isLegalMove && !options.isLegalMove(position, mr, mc, toMove, movePath)) {
+        rejectedByHistoryPolicy = true;
+        continue;
+      }
       const played = playMove(position, mr, mc, toMove);
       if (!played) continue;
       legalMoves += 1;
@@ -178,12 +182,17 @@ export function searchLadder(
     }
 
     if (legalMoves === 0) {
-      // No local defense candidate is not proof of capture: the defender may
-      // have a ko threat, an off-ladder escape, or a legal move omitted by
-      // this deliberately local candidate generator.
+      // With no caller history policy, every generated local response is
+      // checked against the board rules. If none is playable, the side to
+      // move has no ladder continuation (KataGo treats illegal local replies
+      // as failed branches). If the caller's ko/superko policy rejected a
+      // candidate, we cannot distinguish repetition from an omitted legal
+      // response, so preserve the conservative unknown result.
       const terminal: NodeResult = toMove === attacker
         ? { status: "escaped", pv: [], reason: "escaped" }
-        : { status: "unknown", pv: [], reason: "ko-or-no-legal-move" };
+        : rejectedByHistoryPolicy
+          ? { status: "unknown", pv: [], reason: "ko-or-no-legal-move" }
+          : { status: "captured", pv: [], reason: "captured" };
       if (!options.isLegalMove) memo.set(key, terminal);
       return terminal;
     }
@@ -200,14 +209,20 @@ export function searchLadder(
         reason: winningChild.result.reason,
       };
     } else if (children.some(child => child.result.status === "unknown")) {
-      const uncertain = children.find(child => child.result.status === "unknown")!.result;
-      result = { status: "unknown", pv: uncertain.pv, reason: uncertain.reason };
+      const uncertainChild = children.find(child => child.result.status === "unknown")!;
+      const [mr, mc] = uncertainChild.move.split(",").map(Number);
+      result = {
+        status: "unknown",
+        pv: [{ row: mr, col: mc, color: toMove }, ...uncertainChild.result.pv],
+        reason: uncertainChild.result.reason,
+      };
     } else {
-      const fallback = children[0].result;
+      const fallbackChild = children[0];
+      const [mr, mc] = fallbackChild.move.split(",").map(Number);
       result = {
         status: toMove === attacker ? "escaped" : "captured",
-        pv: fallback.pv,
-        reason: fallback.reason,
+        pv: [{ row: mr, col: mc, color: toMove }, ...fallbackChild.result.pv],
+        reason: fallbackChild.result.reason,
       };
     }
     if (!options.isLegalMove) memo.set(key, result);
