@@ -270,7 +270,7 @@ export function searchLadder(
         const liberties = [...group.liberties].map(point => point.split(",").map(Number) as [number, number]);
         return liberties.every(([lr, lc]) =>
           isKoMouth(position, lr, lc, attacker) &&
-          libertiesAfterPlay(position, lr, lc, attacker, 3) <= 2
+          libertiesAfterPlay(position, lr, lc, targetColor, 3) <= 2
         ) && !hasLibertyGainingCaptures(position, group.stones, attacker);
       });
       if (doubleKoDeath) return { status: "captured", pv: [], reason: "captured" };
