@@ -12,8 +12,8 @@ describe("territory and scoring", () => {
     const board = Array.from({ length: 9 }, () => Array(9).fill(null));
     board[0][0] = "black"; board[0][1] = "black"; board[1][0] = "black";
     const map = getTerritory(board);
-    expect(map.black).toBe(78);
-    expect(map.neutral).toBe(0);
+    expect(map.black).toBe(0);
+    expect(map.neutral).toBe(78);
   });
 
   it("keeps regions touching both colors neutral", () => {
@@ -21,6 +21,27 @@ describe("territory and scoring", () => {
     board[0][0] = "black"; board[0][2] = "white";
     const map = getTerritory(board);
     expect(map.neutral).toBe(79);
+  });
+
+  it("does not award open board space to a lone color", () => {
+    const board = Array.from({ length: 9 }, () => Array(9).fill(null));
+    board[0][0] = "black";
+    const map = getTerritory(board);
+    expect(map.black).toBe(0);
+    expect(map.neutral).toBe(80);
+  });
+
+  it("recognizes an enclosed single-color region", () => {
+    const board = Array.from({ length: 9 }, () => Array(9).fill(null));
+    for (let i = 2; i <= 6; i++) {
+      board[2][i] = "black";
+      board[6][i] = "black";
+      board[i][2] = "black";
+      board[i][6] = "black";
+    }
+    const map = getTerritory(board);
+    expect(map.black).toBe(9);
+    expect(map.neutral).toBe(40);
   });
 
   it("requires two passes before scoring", () => {
