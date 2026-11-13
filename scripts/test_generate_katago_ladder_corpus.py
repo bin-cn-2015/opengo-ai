@@ -32,6 +32,14 @@ class GeneratedLadderCorpusTests(unittest.TestCase):
             self.assertIn(len(liberties), (1, 2, 3), case["id"])
             self.assertEqual(len(liberties), case["targetLibertiesAtRoot"])
             self.assertEqual(len(stones), case["targetStonesAtRoot"])
+            self.assertEqual(
+                case["tacticalFeatures"],
+                generator.classify_tactical_features(board, tuple(case["target"]), case["attacker"]),
+            )
+            self.assertIn(
+                "edge-target" if case["targetRegion"] != "interior" else "target-two-liberties" if case["targetLibertiesAtRoot"] == 2 else f"target-{case['targetLibertiesAtRoot']}-liberties" if case["targetLibertiesAtRoot"] == 3 else "target-in-atari",
+                case["tacticalFeatures"],
+            )
 
 
 if __name__ == "__main__":
