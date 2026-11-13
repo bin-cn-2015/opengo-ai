@@ -2,6 +2,7 @@ export type Stone = "black" | "white";
 export type Cell = Stone | null;
 export type Board = Cell[][];
 export type KoRule = "simple" | "positional" | "situational";
+export type ScoringRule = "area" | "territory";
 
 export interface MoveResult {
   board: Board;
@@ -175,4 +176,135 @@ export function getLegalActions(state: GameState): GameAction[] {
 
 export function isGameOver(state: GameState): boolean {
   return state.consecutivePasses >= 2;
+}
+
+
+export interface TerritoryMap {
+  black: number;
+  white: number;
+  neutral: number;
+  /** Territory owner for each empty point: null means neutral or occupied. */
+  owners: (Stone | null)[][];
+}
+
+export interface ScoreResult {
+  rule: ScoringRule;
+  komi: number;
+  black: number;
+  white: number;
+  difference: number;
+  winner: Stone | "draw";
+  territory: TerritoryMap;
+  livingStones: Record<Stone, number>;
+  prisoners: Record<Stone, number>;
+}
+
+/** Configure scoring before or after a game; changing it preserves the board. */
+export function setScoringConfig(
+  state: GameState,
+  scoringRule: ScoringRule,
+  komi: number
+): GameState {
+  if (!Number.isFinite(komi) || komi < 0 || komi > 100000) {
+    throw new RangeError("Komi must be a finite non-negative number.");
+  }
+  return { ...state, scoringRule, komi };
+}
+
+/**
+ * Mark or unmark the entire connected chain at a coordinate as dead.
+ * This is a negotiated scoring annotation and never alters the played board.
+ */
+export function toggleDeadGroup(state: GameState, row: number, col: number): GameState {
+  if (!isGameOver(state)) throw new Error("Dead stones can only be marked after two passes.");
+  const color = state.board[row]?.[col];
+  if (!color) return state;
+  const group = getGroup(state.board, row, col).stones;
+  const keys = group.map(([r, c]) => `${r},${c}`);
+  const dead = new Set(state.deadStones);
+  const allMarked = keys.every((key) => dead.has(key));
+  for (const key of keys) {
+    if (allMarked) dead.delete(key);
+    else dead.add(key);
+  }
+  return { ...state, deadStones: [...dead].sort() };
+}
+
+/** Assign each connected empty region only when it borders exactly one color. */
+export function getTerritory(board: Board, deadStones: readonly string[] = []): TerritoryMap {
+  const size = board.length;
+  const dead = new Set(deadStones);
+  const effective = board.map((line, r) => line.map((cell, c) =>
+    dead.has(`${r},${c}`) ? null : cell
+  ));
+  const owners: (Stone | null)[][] = Array.from({ length: size }, () => Array<Stone | null>(size).fill(null));
+  const visited = new Set<string>();
+  let black = 0, white = 0, neutral = 0;
+
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      if (effective[row][col] !== null || visited.has(`${row},${col}`)) continue;
+      const queue: [number, number][] = [[row, col]];
+      const region: [number, number][] = [];
+      const bordering = new Set<Stone>();
+      visited.add(`${row},${col}`);
+      while (queue.length) {
+        const [r, c] = queue.pop()!;
+        region.push([r, c]);
+        for (const [nr, nc] of neighbors(r, c, size)) {
+          const key = `${nr},${nc}`;
+          const cell = effective[nr][nc];
+          if (cell) bordering.add(cell);
+          else if (!visited.has(key)) {
+            visited.add(key);
+            queue.push([nr, nc]);
+          }
+        }
+      }
+      const owner = bordering.size === 1 ? [...bordering][0] : null;
+      if (owner === "black") black += region.length;
+      else if (owner === "white") white += region.length;
+      else neutral += region.length;
+      if (owner) for (const [r, c] of region) owners[r][c] = owner;
+    }
+  }
+  return { black, white, neutral, owners };
+}
+
+/** Calculate final score. Area scoring counts living stones + territory;
+ * territory scoring counts territory + prisoners (including agreed dead stones).
+ */
+export function calculateScore(state: GameState): ScoreResult {
+  if (!isGameOver(state)) throw new Error("The game must end with two passes before scoring.");
+  const dead = new Set(state.deadStones);
+  const territory = getTerritory(state.board, state.deadStones);
+  const livingStones: Record<Stone, number> = { black: 0, white: 0 };
+  for (let r = 0; r < state.board.length; r++) {
+    for (let c = 0; c < state.board.length; c++) {
+      const stone = state.board[r][c];
+      if (stone && !dead.has(`${r},${c}`)) livingStones[stone]++;
+    }
+  }
+  const deadByColor: Record<Stone, number> = { black: 0, white: 0 };
+  for (const key of dead) {
+    const [r, c] = key.split(",").map(Number);
+    const stone = state.board[r]?.[c];
+    if (stone) deadByColor[stone]++;
+  }
+  const prisoners: Record<Stone, number> = {
+    black: state.captures.black + deadByColor.white,
+    white: state.captures.white + deadByColor.black
+  };
+  const black = state.scoringRule === "area"
+    ? livingStones.black + territory.black
+    : territory.black + prisoners.black;
+  const white = (state.scoringRule === "area"
+    ? livingStones.white + territory.white
+    : territory.white + prisoners.white) + state.komi;
+  const difference = black - white;
+  return {
+    rule: state.scoringRule, komi: state.komi, black, white, difference,
+    winner: difference > 0 ? "black" : difference < 0 ? "white" : "draw",
+    territory, livingStones, prisoners
+  };
 }
