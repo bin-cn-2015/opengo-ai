@@ -126,8 +126,11 @@ function bensonFixedPoint(
       }
     }
     for (const regionIndex of [...activeRegions]) {
-      const stillVital = [...regions[regionIndex].vitalFor].some(groupId => groups.has(groupId));
-      if (!stillVital) {
+      // A region touching a chain eliminated by Benson is no longer a valid
+      // eye/region in the reduced candidate position.
+      const touchesEliminatedGroup = [...regions[regionIndex].borderingGroups]
+        .some(groupId => !groups.has(groupId));
+      if (touchesEliminatedGroup) {
         activeRegions.delete(regionIndex);
         changed = true;
       }
@@ -187,6 +190,19 @@ export function calculatePassAliveArea(board: Board): PassAliveAreaResult {
       const containsOpponentAlive = region.points.some(([r, c]) =>
         board[r][c] === opponent && passAliveStones[r][c]);
       if (containsOpponentAlive) continue;
+      const adjacentToAliveChain = new Set<string>();
+      for (const groupId of bordering) {
+        for (const [r, c] of chains[groupId].stones) {
+          for (const [nr, nc] of neighbors(r, c, size)) {
+            if (board[nr][nc] !== color) adjacentToAliveChain.add(`${nr},${nc}`);
+          }
+        }
+      }
+      const pointsAdjacentToAlive = region.points.filter(([r, c]) =>
+        adjacentToAliveChain.has(`${r},${c}`)).length;
+      // KataGo's pass-alive territory definition permits at most one point
+      // in a region not directly adjacent to a pass-alive group.
+      if (pointsAdjacentToAlive < region.points.length - 1) continue;
       for (const [r, c] of region.points) {
         if (board[r][c] !== null || conflictingOwnership[r][c]) continue;
         if (owners[r][c] !== null && owners[r][c] !== color) {
