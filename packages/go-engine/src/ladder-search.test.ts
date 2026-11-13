@@ -289,7 +289,7 @@ describe("ladder search", () => {
 
     const result = searchLadder(board, 4, 4, "black");
     expect(result.status).toBe("unknown");
-    expect(result.reason).toBe("node-limit");
+    expect(result.reason).toBe("ko-or-no-legal-move");
   });
 
   it("does not apply the double-ko shortcut when only one liberty is a ko mouth", () => {
