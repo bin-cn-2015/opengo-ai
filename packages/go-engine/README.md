@@ -54,18 +54,20 @@ The V7 adapter now derives `opponentEscape` in TypeScript. For each opponent cha
 
 ### Generated KataGo ladder differential corpus
 
-The CI oracle job deterministically generates 48 additional legal 9x9 local
+The CI oracle job deterministically generates 96 additional legal 9x9 local
 positions (seed `20261113`) with target chains in one to three liberties.
 The generator rejects positions containing any zero-liberty setup group,
 labels accepted positions by calling the pinned official C++ adapter, and
 writes both `tests/katago-ladder/generated-cases.json` and the TypeScript
-test-data module. CI then replays the generated corpus against the official
-oracle and exercises every position in the TypeScript reader. TypeScript
-status differences are reported as differential diagnostics rather than
-silently rewritten to match the C++ boolean result; the test still verifies
-that the TS reader returns a valid status and a nonempty search count.
+test-data module. CI replays the generated corpus against the official oracle
+and then runs every position through the TypeScript reader. The differential
+test is a strict gate: every TypeScript status must exactly match the pinned
+KataGo boolean result mapping (`captured` or `escaped`); `unknown` and any
+status divergence fail the job. This mapping is specific to the current
+fixtures and does not remove the documented semantic limitation that the
+official API does not expose an `unknown` state.
 
 The generator is deterministic and separately unit-tested for seed
 reproducibility, live setup groups, and target-liberty constraints. The
-generated corpus is recreated in CI and is not committed as a static,
-hand-maintained snapshot.
+generated corpus is recreated in CI and uploaded as a workflow artifact; it
+is not committed as a static, hand-maintained snapshot.
