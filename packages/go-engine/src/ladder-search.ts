@@ -84,6 +84,59 @@ function libertiesAfterPlay(
   return Math.min(getGroup(played.board, row, col).liberties.size, cap);
 }
 
+interface LibertyBounds {
+  lower: number;
+  upper: number;
+}
+
+/**
+ * Port of KataGo Board::getBoundNumLibertiesAfterPlay.
+ * The lower bound is used only for a single target chain: when it proves
+ * three or more liberties after a defender extension, that branch is an
+ * immediate ladder escape and does not need recursive reading.
+ */
+function getBoundNumLibertiesAfterPlay(
+  board: Board,
+  row: number,
+  col: number,
+  player: Stone,
+): LibertyBounds {
+  const opponent = otherColor(player);
+  let immediateLiberties = 0;
+  let capturedDirections = 0;
+  let potentialLibertiesFromCaptures = 0;
+  let connectionLiberties = 0;
+  let maxConnectionLiberties = 0;
+  const seenFriendly = new Set<string>();
+
+  for (const [nr, nc] of adjacentPoints(row, col, board.length)) {
+    if (board[nr][nc] === null) {
+      immediateLiberties += 1;
+    } else if (board[nr][nc] === opponent) {
+      const group = getGroup(board, nr, nc);
+      if (group.liberties.size === 1) {
+        // Count adjacent directions, matching KataGo's bound calculation:
+        // each captured stone adjacent to the played point becomes a liberty.
+        capturedDirections += 1;
+        potentialLibertiesFromCaptures += group.stones.length;
+      }
+    } else if (board[nr][nc] === player) {
+      const key = `${nr},${nc}`;
+      if (seenFriendly.has(key)) continue;
+      const group = getGroup(board, nr, nc);
+      for (const [gr, gc] of group.stones) seenFriendly.add(`${gr},${gc}`);
+      const connected = group.liberties.size - 1;
+      connectionLiberties += connected;
+      maxConnectionLiberties = Math.max(maxConnectionLiberties, connected);
+    }
+  }
+
+  return {
+    lower: capturedDirections + Math.max(maxConnectionLiberties, immediateLiberties),
+    upper: immediateLiberties + potentialLibertiesFromCaptures + connectionLiberties,
+  };
+}
+
 /** True if any opponent chain adjacent to this target group is in atari. */
 function hasLibertyGainingCaptures(board: Board, stones: readonly [number, number][], attacker: Stone): boolean {
   const seen = new Set<string>();
@@ -254,7 +307,24 @@ export function searchLadder(
       const played = playMove(position, mr, mc, toMove);
       if (!played) continue;
       legalMoves += 1;
-      children.push({ move, result: visit(played.board, otherColor(toMove), depth + 1, movePath) });
+
+      // KataGo's lower-bound early-out: if this is the only target chain,
+      // the defender is extending its sole liberty, and the bound proves at
+      // least three liberties, this child is an immediate escape. Keep the
+      // repetition check in front of the shortcut, just as in visit().
+      let childResult: NodeResult;
+      const soleTarget = groups.length === 1 && threatenedGroups.length === 1 &&
+        threatenedGroups[0].liberties.size === 1;
+      const soleLiberty = soleTarget && threatenedGroups[0].liberties.has(move);
+      const childKey = boardKey(played.board) + "|" + otherColor(toMove);
+      if (toMove === targetColor && soleLiberty &&
+          !movePath.includes(childKey) &&
+          getBoundNumLibertiesAfterPlay(position, mr, mc, toMove).lower >= 3) {
+        childResult = { status: "escaped", pv: [], reason: "escaped" };
+      } else {
+        childResult = visit(played.board, otherColor(toMove), depth + 1, movePath);
+      }
+      children.push({ move, result: childResult });
     }
 
     if (legalMoves === 0) {
