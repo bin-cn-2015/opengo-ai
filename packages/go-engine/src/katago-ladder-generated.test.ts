@@ -10,6 +10,16 @@ describe("generated KataGo C++ ladder differential corpus", () => {
     expect(Array.isArray(generatedLadderCases)).toBe(true);
   });
 
+  it("covers board regions and both sides to move evenly", () => {
+    const countRegion = (region: string) =>
+      generatedLadderCases.filter(fixture => fixture.targetRegion === region).length;
+    expect(countRegion("corner-band")).toBe(32);
+    expect(countRegion("edge-band")).toBe(32);
+    expect(countRegion("interior")).toBe(32);
+    expect(generatedLadderCases.filter(fixture => fixture.firstPlayer === "attacker")).toHaveLength(48);
+    expect(generatedLadderCases.filter(fixture => fixture.firstPlayer === "defender")).toHaveLength(48);
+  });
+
   it.each(generatedLadderCases)("$id (root liberties: $targetLibertiesAtRoot)", (fixture) => {
     const board = createBoard(fixture.size);
     for (const [color, row, col] of fixture.stones) {
