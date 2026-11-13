@@ -83,16 +83,16 @@ export function searchLadder(
 
   const visit = (position: Board, toMove: Stone, depth: number): NodeResult => {
     nodes += 1;
+    if (nodes > maxNodes) {
+      cutoff = "node-limit";
+      return { status: "unknown", pv: [], reason: "node-limit" };
+    }
     const anchor = findTargetAnchor(position);
     if (!anchor) return { status: "captured", pv: [], reason: "captured" };
 
     const group = getGroup(position, anchor[0], anchor[1]);
     if (group.liberties.size > 2) return { status: "escaped", pv: [], reason: "escaped" };
     if (group.liberties.size === 0) return { status: "captured", pv: [], reason: "captured" };
-    if (nodes > maxNodes) {
-      cutoff = "node-limit";
-      return { status: "unknown", pv: [], reason: "node-limit" };
-    }
     if (depth >= maxDepth) {
       cutoff = "depth-limit";
       return { status: "unknown", pv: [], reason: "depth-limit" };
