@@ -43,8 +43,10 @@ export interface KataGoV7Position {
   validTurnsThisPhase: number;
   /** Current board followed by the prior two boards, each row-major. */
   recentBoards: readonly [Uint8Array, Uint8Array, Uint8Array];
-  /** In normal play this includes simple-ko and superko-banned locations. */
+  /** Superko-banned locations from BoardHistory. */
   superKoBanned: Uint8Array;
+  /** Simple-ko point as a row-major board index, or null when no simple ko exists. */
+  simpleKoPoint?: number | null;
   /** Used only during encore phases. */
   koRecapBlocked: Uint8Array;
   encorePhase: number;
@@ -277,9 +279,13 @@ export function encodeKataGoV7(
 
   // Feature 6: normal ko/superko bans, or encore superko bans.
   // Feature 7: encore ko-recapture blocks. Feature 8 is reserved and remains 0.
+  if (position.simpleKoPoint !== undefined && position.simpleKoPoint !== null &&
+      (!Number.isInteger(position.simpleKoPoint) || position.simpleKoPoint < 0 || position.simpleKoPoint >= boardArea)) {
+    throw new RangeError("simpleKoPoint must be null or a valid row-major board index.");
+  }
   for (let point = 0; point < boardArea; point += 1) {
     if (position.encorePhase === 0) {
-      if (position.superKoBanned[point] === 1) set(6, point);
+      if (position.superKoBanned[point] === 1 || position.simpleKoPoint === point) set(6, point);
     } else {
       if (position.superKoBanned[point] === 1) set(6, point);
       if (position.koRecapBlocked[point] === 1) set(7, point);
