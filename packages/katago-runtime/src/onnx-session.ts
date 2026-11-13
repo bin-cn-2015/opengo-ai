@@ -115,7 +115,7 @@ function checkTensorMetadata(
   for (let i = 0; i < expected.length; i += 1) {
     const wanted = expected[i];
     const got = shape[i];
-    if (wanted !== null && typeof got === "number" && got !== wanted) {
+    if (wanted !== null && got !== wanted) {
       throw new Error(`KataGo ${label} dimension ${i} mismatch: expected ${wanted}, got ${got}.`);
     }
   }
