@@ -13,6 +13,21 @@ TypeScript-first browser runtime for official KataGo neural-network models. The 
 - ONNX Runtime Web session adapter that binds KataGo float32 input tensors and returns the raw policy, value, score and ownership tensors.
 - ONNX graph inspection helper that exports operator/domain/opset inventory and metadata sidecars.
 
+## KataGo V7 feature encoder (initial implementation)
+
+`encodeKataGoV7(position, metadata)` is exported from the package. It emits NCHW `InputSpatial` (22 × nnYLen × nnXLen), 19-value `InputGlobal`, and an `InputMask` copied from spatial channel 0. It implements the V7 22-plane layout: board/stones/liberties, ko restrictions, five move-history locations and pass flags, ladder planes, area ownership, and second-encore starting stones. It also validates the model's V7 22/19 input contract and optional InputMeta length.
+
+The encoder takes explicit rule-derived inputs for ladder search masks and pass-alive/independent-life area ownership. These are intentionally not approximated: the current Go rules package does not yet implement KataGo's ladder search and pass-alive area algorithms. The caller must provide those values from a parity-validated rules layer. Likewise, `passWouldEndPhase`, phase-history visibility, ko/superko bans and second-encore starting colors must come from the complete game-history state, not just the visible board.
+
+Example:
+
+```ts
+import { encodeKataGoV7 } from "@opengo-ai/katago-runtime";
+
+const tensors = encodeKataGoV7(positionWithHistoryAndDerivedMasks, modelMetadata);
+await session.run(tensors);
+```
+
 ## Not implemented / not yet verified
 
 - V7 feature encoding from Go board history.
