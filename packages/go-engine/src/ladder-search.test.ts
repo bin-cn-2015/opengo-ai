@@ -74,19 +74,18 @@ describe("ladder search", () => {
     expect(result.principalVariation[0]).toEqual({ row: 4, col: 5, color: "black" });
   });
 
-  it("returns unknown when a searched move recreates an earlier situational position", () => {
+  it("returns unknown when a searched non-capturing move recreates an earlier situational position", () => {
     const board = createBoard(9);
     board[4][4] = "white";
     board[3][4] = "black";
     board[4][3] = "black";
-    board[5][4] = "black";
-    const afterCapture = playMove(board, 4, 5, "black");
-    expect(afterCapture).not.toBeNull();
+    const afterAttack = playMove(board, 4, 5, "black");
+    expect(afterAttack).not.toBeNull();
 
     const result = searchLadder(board, 4, 4, "black", {
       initialPath: [
         boardKey(board) + "|black",
-        boardKey(afterCapture!.board) + "|white",
+        boardKey(afterAttack!.board) + "|white",
       ],
     });
 
