@@ -18,6 +18,8 @@ export interface LadderSearchOptions {
   isLegalMove?: (board: Board, row: number, col: number, color: Stone, path?: readonly string[]) => boolean;
   /** Start with the defender to move after an attacker-first setup move. */
   firstPlayer?: "attacker" | "defender";
+  /** Original target stones to keep tracking if an attacking move splits the chain. */
+  targetStones?: readonly (readonly [number, number])[];
 }
 
 export interface LadderSearchResult {
@@ -71,7 +73,10 @@ export function searchLadder(
   if (!Number.isInteger(maxNodes) || maxNodes < 1) throw new RangeError("maxNodes must be a positive integer.");
   if (!Number.isInteger(maxDepth) || maxDepth < 1) throw new RangeError("maxDepth must be a positive integer.");
 
-  const targetPoints = initialGroup.stones.map(([r, c]) => [r, c] as const);
+  const targetPoints = (options.targetStones ?? initialGroup.stones).map(([r, c]) => [r, c] as const);
+  if (targetPoints.length === 0 || targetPoints.some(([r, c]) => !Number.isInteger(r) || !Number.isInteger(c) || r < 0 || c < 0 || r >= board.length || c >= board.length || board[r]?.[c] !== targetColor)) {
+    throw new RangeError("targetStones must identify existing stones of the target color.");
+  }
   const memo = new Map<string, NodeResult>();
   let nodes = 0;
   let cutoff: LadderSearchResult["reason"] | null = null;
@@ -110,7 +115,8 @@ export function searchLadder(
     }
     const groupKey = groups.map(g => g.stones.map(([r,c]) => r + "," + c).sort().join(";")).sort().join("/");
     const key = positionKey + "|" + toMove + "|" + groupKey;
-    const cached = memo.get(key);
+    // History-aware legality can make the same board differ by repetition path.
+    const cached = options.isLegalMove ? undefined : memo.get(key);
     if (cached) return cached;
 
     const candidates = new Set<string>(groups.flatMap(group => [...group.liberties]));
@@ -143,7 +149,7 @@ export function searchLadder(
       const terminal: NodeResult = toMove === attacker
         ? { status: "escaped", pv: [], reason: "ko-or-no-legal-move" }
         : { status: "captured", pv: [], reason: "ko-or-no-legal-move" };
-      memo.set(key, terminal);
+      if (!options.isLegalMove) memo.set(key, terminal);
       return terminal;
     }
 
@@ -169,13 +175,15 @@ export function searchLadder(
         reason: fallback.reason,
       };
     }
-    memo.set(key, result);
+    if (!options.isLegalMove) memo.set(key, result);
     return result;
   };
 
   const firstPlayer = options.firstPlayer ?? "attacker";
   const initialPlayer = firstPlayer === "attacker" ? attacker : targetColor;
-  const result = visit(board, initialPlayer, 0, [boardKey(board) + "|" + initialPlayer]);
+  // The path contains ancestors only; including the current node here would
+  // incorrectly classify the root as an immediate repetition.
+  const result = visit(board, initialPlayer, 0, []);
   return {
     status: result.status,
     target: { row, col },
@@ -259,7 +267,7 @@ export function findLadderEscapePoints(
           survivingAnchor[0],
           survivingAnchor[1],
           attacker,
-          { ...options, firstPlayer: "defender" },
+          { ...options, firstPlayer: "defender", targetStones: group.stones },
         );
         if (reading.status === "captured") {
           mask[attackRow * size + attackCol] = 1;
