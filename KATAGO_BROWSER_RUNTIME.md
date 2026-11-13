@@ -177,6 +177,7 @@ Implemented in `packages/katago-runtime`:
 - ONNX Runtime Web session loader that creates a session for the selected provider and binds KataGo float32 input tensors; raw policy/value/score/ownership heads are returned.
 - `scripts/inspect_katago_onnx.py` extracts the ONNX operator/domain/opset inventory and `katago.*` metadata into JSON reports/sidecars.
 - Root dependency `onnxruntime-web` is pinned to the stable 1.31.1 release line.
+- V7 feature encoder initial implementation: NCHW 22-plane spatial tensor, 19 global features, InputMask, history/pass planes, ko planes, relative area planes, second-encore planes, and model/input dimension validation. It consumes explicit ladder masks and pass-alive/independent-life area ownership; those expensive rule-derived algorithms are not yet implemented in TypeScript or parity-validated.
 
 Still not implemented or verified:
 - Actual export and inspection of the exact current official `kata1-tf3-b11c768-s12382M-d6533M` weights.
