@@ -88,18 +88,19 @@ describe("encodeKataGoV7", () => {
   it("encodes player-relative stones and exact 1/2/3-liberty buckets", () => {
     // Black to move: a white stone in atari at (1,1), black stones with 2 and 3 liberties.
     const board = new Uint8Array(25);
-    board[6] = 2;
-    board[5] = 1;
+    board[12] = 2;
     board[7] = 1;
     board[11] = 1;
     board[13] = 1;
-    board[18] = 1;
+    board[0] = 1;
+    board[22] = 1;
     const position = emptyPosition({ board, recentBoards: [board, board, board] });
     const encoded = encodeKataGoV7(position, metadata);
-    expect(encoded.spatial[at(2, 1, 1)]).toBe(1);
-    expect(encoded.spatial[at(3, 1, 1)]).toBe(1);
-    expect(encoded.spatial[at(1, 0, 1)]).toBe(1);
-    expect(encoded.spatial[at(4, 0, 1)]).toBe(1);
+    expect(encoded.spatial[at(2, 2, 2)]).toBe(1);
+    expect(encoded.spatial[at(3, 2, 2)]).toBe(1);
+    expect(encoded.spatial[at(1, 0, 0)]).toBe(1);
+    expect(encoded.spatial[at(4, 0, 0)]).toBe(1);
+    expect(encoded.spatial[at(5, 2, 4)]).toBe(1);
   });
 
   it("encodes move history planes and pass flags in reverse chronological order", () => {
@@ -117,8 +118,9 @@ describe("encodeKataGoV7", () => {
     expect(encoded.global[0]).toBe(0);
     expect(encoded.spatial[at(10, 0, 0)]).toBe(0);
     // The third most recent move is black's pass.
-    expect(encoded.global[2]).toBe(1);
-    expect(encoded.spatial[at(12, 1, 0)]).toBe(1);
+    expect(encoded.global[1]).toBe(1);
+    expect(encoded.spatial[at(11, 1, 0)]).toBe(1);
+    expect(encoded.spatial[at(12, 0, 0)]).toBe(1);
   });
 
   it("encodes rules, komi, pass-end and button global features", () => {
