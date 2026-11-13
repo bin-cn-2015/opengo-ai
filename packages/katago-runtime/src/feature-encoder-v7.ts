@@ -55,6 +55,8 @@ export interface KataGoV7Position {
   passWouldEndPhase: boolean;
   /** True when KataGo's pass handling requires move history to be hidden. */
   suppressHistory?: boolean;
+  /** KataGo pass-handling override that also clears global feature 14. */
+  suppressPassWouldEndPhase?: boolean;
   /** Game finished or past normal phase end: KataGo retains at most one move. */
   gameFinishedOrPastPhaseEnd?: boolean;
   maxHistory?: number;
@@ -202,6 +204,9 @@ export function encodeKataGoV7(
   const boardArea = width * height;
   const bufferArea = metadata.nnXLen * metadata.nnYLen;
   assertBoard("board", position.board, boardArea);
+  if (!position.recentBoards[0].every((stone, index) => stone === position.board[index])) {
+    throw new Error("recentBoards[0] must be the current board.");
+  }
   for (const [index, snapshot] of position.recentBoards.entries()) {
     assertBoard(\`recentBoards[\${index}]\`, snapshot, boardArea);
   }
@@ -298,7 +303,7 @@ export function encodeKataGoV7(
   let maxHistory = position.suppressHistory ? 0 : 5;
   if (!position.suppressHistory && position.gameFinishedOrPastPhaseEnd) maxHistory = 1;
   maxHistory = Math.min(maxHistory, position.maxHistory ?? 5, position.validTurnsThisPhase);
-  const recentMoves = position.moves.slice(-maxHistory).reverse();
+  const recentMoves = maxHistory > 0 ? position.moves.slice(-maxHistory).reverse() : [];
   const expectedPreviousPlayer: V7Color = position.nextPlayer === "B" ? "W" : "B";
   const passGlobalIndex = [0, 1, 2, 3, 4];
   const spatialHistoryChannel = [9, 10, 11, 12, 13];
@@ -354,7 +359,7 @@ export function encodeKataGoV7(
   if (position.rules.taxRule === "all") global[11] = 1;
   if (position.encorePhase > 0) global[12] = 1;
   if (position.encorePhase > 1) global[13] = 1;
-  global[14] = position.passWouldEndPhase ? 1 : 0;
+  global[14] = position.passWouldEndPhase && !position.suppressPassWouldEndPhase ? 1 : 0;
 
   const advantage = position.playoutDoublingAdvantage ?? 0;
   if (!Number.isFinite(advantage)) throw new RangeError("playoutDoublingAdvantage must be finite.");
