@@ -8,7 +8,7 @@ function endedGame() {
 }
 
 describe("territory and scoring", () => {
-  it("counts an empty region bordered only by black as black territory", () => {
+  it("keeps a board-spanning open region neutral even when only black borders it", () => {
     const board = Array.from({ length: 9 }, () => Array(9).fill(null));
     board[0][0] = "black"; board[0][1] = "black"; board[1][0] = "black";
     const map = getTerritory(board);
