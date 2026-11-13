@@ -72,7 +72,6 @@ export function searchLadder(
   if (!Number.isInteger(maxDepth) || maxDepth < 1) throw new RangeError("maxDepth must be a positive integer.");
 
   const targetPoints = initialGroup.stones.map(([r, c]) => [r, c] as const);
-  const initialPath = [boardKey(board)];
   const memo = new Map<string, NodeResult>();
   let nodes = 0;
   let cutoff: LadderSearchResult["reason"] | null = null;
