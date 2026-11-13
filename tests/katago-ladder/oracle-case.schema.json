@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "KataGo ladder oracle case",
+  "type": "object",
+  "required": [
+    "id",
+    "size",
+    "stones",
+    "target",
+    "attacker",
+    "firstPlayer",
+    "expected"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provenance": {
+      "type": "string"
+    },
+    "size": {
+      "type": "integer",
+      "minimum": 2
+    },
+    "stones": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "enum": [
+              "black",
+              "white"
+            ]
+          },
+          {
+            "type": "integer",
+            "minimum": 0
+          },
+          {
+            "type": "integer",
+            "minimum": 0
+          }
+        ],
+        "minItems": 3,
+        "maxItems": 3
+      }
+    },
+    "target": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "attacker": {
+      "enum": [
+        "black",
+        "white"
+      ]
+    },
+    "firstPlayer": {
+      "enum": [
+        "attacker",
+        "defender"
+      ]
+    },
+    "expected": {
+      "enum": [
+        "captured",
+        "escaped",
+        "unknown"
+      ]
+    },
+    "expectedNodes": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}
