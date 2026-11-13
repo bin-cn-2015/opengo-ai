@@ -86,7 +86,10 @@ describe("game state and turn handling", () => {
 
   it("alternates turns and counts captures for the player who made them", () => {
     let game = createGame(9);
-    for (const [row, col] of [[4, 4], [0, 0], [3, 4], [0, 1], [4, 3], [0, 2], [5, 4], [1, 0]] as const) {
+    const board = game.board.map((row) => [...row]);
+    board[4][4] = "white";
+    game = { ...game, board };
+    for (const [row, col] of [[3, 4], [0, 0], [4, 3], [0, 1], [5, 4], [0, 2]] as const) {
       game = applyAction(game, { type: "play", row, col })!;
     }
     game = applyAction(game, { type: "play", row: 4, col: 5 })!;
