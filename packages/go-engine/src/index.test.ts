@@ -73,7 +73,7 @@ describe("game state and turn handling", () => {
     for (const [row, col] of [[4, 4], [0, 0], [3, 4], [0, 1], [4, 3], [0, 2], [5, 4], [1, 0]] as const) {
       game = applyAction(game, { type: "play", row, col })!;
     }
-    game = applyAction(game, { type: "play", row: 5, col: 5 })!;
+    game = applyAction(game, { type: "play", row: 4, col: 5 })!;
     expect(game.captures.black).toBe(1);
     expect(game.toMove).toBe("white");
   });
