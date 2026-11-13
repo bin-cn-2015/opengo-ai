@@ -22,9 +22,9 @@ if (reading.status === "captured") {
 const ladderMask = findLadderedStones(board, "black");
 ```
 
-The reader handles direct ladder extensions and adjacent-atari countercaptures. It tracks all surviving fragments of the original target chain after a split, detects repeated board/side-to-move states as unresolved ko cycles, and passes the explored path to the optional `isLegalMove` hook so callers can enforce simple ko or superko. A resource cutoff always returns `unknown`.
+The reader handles direct ladder extensions and adjacent-atari countercaptures. It tracks all surviving fragments of the original target chain after a split, detects repeated board/side-to-move states as unresolved ko cycles, and passes the explored path to the optional `isLegalMove` hook. Callers can seed `initialPath` with prior `boardKey(board) + "|" + sideToMove` entries from the real game history to enforce positional/situational repetition policies. History-dependent searches skip memoization because legality can differ for identical boards reached through different paths. A resource cutoff always returns `unknown`.
 
-This is a deliberately bounded ladder reader, not yet a byte-for-byte port of KataGo's `Board::iterLadders` implementation. Full snapback and ko-threat handling, tactical escapes beyond the local ladder candidate set, and exact feature parity still need comparison tests against official KataGo.
+This is a deliberately bounded ladder reader, not yet a byte-for-byte port of KataGo's `Board::iterLadders` implementation. Full snapback/ko-threat reading, pass-aware tactical escapes beyond the local ladder candidate set, and exact feature parity still need comparison tests against official KataGo. The history hook provides the information needed for a caller-supplied ko policy; it does not itself implement every ruleset.
 
 ## Pass-alive area
 
