@@ -24,7 +24,9 @@ describe("Benson pass-alive area", () => {
       board[row][5] = "black";
     }
     const result = calculatePassAliveArea(board);
-    expect(result.passAliveStones[2][2]).toBe(false);
+    expect(result.passAliveStones[1][2]).toBe(true);
+    expect(result.owners[2][2]).toBe("black");
+    expect(result.owners[0][0]).toBeNull();
     expect(result.aliveGroupIds.black.length).toBeGreaterThan(0);
   });
 
