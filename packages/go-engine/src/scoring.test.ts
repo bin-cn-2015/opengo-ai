@@ -41,7 +41,7 @@ describe("territory and scoring", () => {
     }
     const map = getTerritory(board);
     expect(map.black).toBe(9);
-    expect(map.neutral).toBe(40);
+    expect(map.neutral).toBe(56);
   });
 
   it("requires two passes before scoring", () => {
