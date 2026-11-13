@@ -28,7 +28,11 @@ describe("generated KataGo C++ ladder differential corpus", () => {
     expect(countFeature("target-in-atari")).toBeGreaterThan(0);
     expect(countFeature("target-two-liberties")).toBeGreaterThan(0);
     expect(countFeature("target-three-liberties")).toBeGreaterThan(0);
-    expect(countFeature("multi-stone-target")).toBeGreaterThan(0);
+    expect(countFeature("multi-stone-target")).toBeGreaterThanOrEqual(16);
+    expect(countFeature("adjacent-attacker-in-atari")).toBeGreaterThanOrEqual(16);
+    expect(countFeature("target-in-atari")).toBeGreaterThanOrEqual(6);
+    expect(countFeature("target-two-liberties")).toBeGreaterThanOrEqual(24);
+    expect(countFeature("target-three-liberties")).toBeGreaterThanOrEqual(48);
     expect(countFeature("edge-band-target")).toBe(64);
     expect(countFeature("corner-band-target")).toBe(32);
     console.info("KataGo tactical motif coverage", {
