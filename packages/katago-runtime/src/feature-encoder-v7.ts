@@ -304,7 +304,7 @@ export function encodeKataGoV7(
 
   // Match KataGo's history visibility and phase cap.
   if (position.maxHistory !== undefined && (!Number.isInteger(position.maxHistory) || position.maxHistory < 0)) {
-    throw new RangeError("maxHistory must be an integer between 0 and 5.");
+    throw new RangeError("maxHistory must be a non-negative integer.");
   }
   let maxHistory = position.suppressHistory ? 0 : 5;
   if (!position.suppressHistory && position.gameFinishedOrPastPhaseEnd) maxHistory = 1;
@@ -388,6 +388,7 @@ export function encodeKataGoV7(
     if (position.meta.length !== metadata.numInputMetaChannels) {
       throw new RangeError(`InputMeta must contain ${metadata.numInputMetaChannels} values.`);
     }
+    if (!position.meta.every(Number.isFinite)) throw new RangeError("InputMeta values must all be finite.");
   } else if (position.meta) {
     throw new Error("InputMeta was supplied for a model that does not have a metadata encoder.");
   }
