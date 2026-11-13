@@ -49,7 +49,7 @@ export default function App() {
               {points.map((r) => points.map((c) => {
                 const stone = board[r][c];
                 const star = [3, 9, 15].includes(r) && [3, 9, 15].includes(c);
-                return <button key={`${r}-${c}`} className="point" style={{ left: `${(c / 18) * 100}%`, top: `${(r / 18) * 100}%` }} onClick={() => play(r, c)} disabled={finished} aria-label={`Row ${r + 1}, column ${c + 1}`}>
+                return <button key={`${r}-${c}`} className="point" style={{ left: `${(c / 18) * 100}%`, top: `${(r / 18) * 100}%` }} onClick={() => play(r, c)} aria-label={`Row ${r + 1}, column ${c + 1}`}>
                   {star && !stone && <span className="star" />}
                   {stone && <span className={"stone " + stone + (game.deadStones.includes(r + "," + c) ? " dead" : "")} />}
                   {!stone && finished && territory.owners[r][c] && <span className={"territory " + territory.owners[r][c]} />}
