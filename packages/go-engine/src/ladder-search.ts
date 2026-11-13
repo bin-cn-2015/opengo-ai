@@ -15,7 +15,7 @@ export interface LadderSearchOptions {
   /** Maximum ply depth. A cutoff returns unknown, never a guess. */
   maxDepth?: number;
   /** Optional history/superko legality hook supplied by the caller. */
-  isLegalMove?: (board: Board, row: number, col: number, color: Stone) => boolean;
+  isLegalMove?: (board: Board, row: number, col: number, color: Stone, path: readonly string[]) => boolean;
   /** Start with the defender to move after an attacker-first setup move. */
   firstPlayer?: "attacker" | "defender";
 }
@@ -72,43 +72,53 @@ export function searchLadder(
   if (!Number.isInteger(maxDepth) || maxDepth < 1) throw new RangeError("maxDepth must be a positive integer.");
 
   const targetPoints = initialGroup.stones.map(([r, c]) => [r, c] as const);
+  const initialPath = [boardKey(board)];
   const memo = new Map<string, NodeResult>();
   let nodes = 0;
   let cutoff: LadderSearchResult["reason"] | null = null;
 
-  const findTargetAnchor = (position: Board): [number, number] | null => {
+  const findTargetGroups = (position: Board): { stones: [number, number][]; liberties: Set<string> }[] => {
+    const visited = new Set<string>();
+    const groups: { stones: [number, number][]; liberties: Set<string> }[] = [];
     for (const [r, c] of targetPoints) {
-      if (position[r]?.[c] === targetColor) return [r, c];
+      const point = r + "," + c;
+      if (position[r]?.[c] !== targetColor || visited.has(point)) continue;
+      const group = getGroup(position, r, c);
+      for (const [gr, gc] of group.stones) visited.add(gr + "," + gc);
+      groups.push(group);
     }
-    return null;
+    return groups;
   };
 
-  const visit = (position: Board, toMove: Stone, depth: number): NodeResult => {
+  const visit = (position: Board, toMove: Stone, depth: number, path: readonly string[]): NodeResult => {
     nodes += 1;
     if (nodes > maxNodes) {
       cutoff = "node-limit";
       return { status: "unknown", pv: [], reason: "node-limit" };
     }
-    const anchor = findTargetAnchor(position);
-    if (!anchor) return { status: "captured", pv: [], reason: "captured" };
-
-    const group = getGroup(position, anchor[0], anchor[1]);
-    if (group.liberties.size > 2) return { status: "escaped", pv: [], reason: "escaped" };
-    if (group.liberties.size === 0) return { status: "captured", pv: [], reason: "captured" };
+    const groups = findTargetGroups(position);
+    if (groups.length === 0) return { status: "captured", pv: [], reason: "captured" };
+    if (groups.some(group => group.liberties.size > 2)) return { status: "escaped", pv: [], reason: "escaped" };
+    if (groups.some(group => group.liberties.size === 0)) return { status: "captured", pv: [], reason: "captured" };
     if (depth >= maxDepth) {
       cutoff = "depth-limit";
       return { status: "unknown", pv: [], reason: "depth-limit" };
     }
 
-    const key = `${boardKey(position)}|${toMove}|${anchor[0]},${anchor[1]}`;
+    const positionKey = boardKey(position);
+    if (path.includes(positionKey + "|" + toMove)) {
+      return { status: "unknown", pv: [], reason: "ko-or-no-legal-move" };
+    }
+    const groupKey = groups.map(g => g.stones.map(([r,c]) => r + "," + c).sort().join(";")).sort().join("/");
+    const key = positionKey + "|" + toMove + "|" + groupKey;
     const cached = memo.get(key);
     if (cached) return cached;
 
-    const candidates = new Set<string>(group.liberties);
+    const candidates = new Set<string>(groups.flatMap(group => [...group.liberties]));
     // A defender may also capture an adjacent attacking chain in atari. Its
     // sole liberty is necessarily adjacent to the target group in ladder shape.
     if (toMove === targetColor) {
-      for (const [r, c] of group.stones) {
+      for (const [r, c] of groups.flatMap(group => group.stones)) {
         for (const [nr, nc] of adjacentPoints(r, c, position.length)) {
           if (position[nr][nc] !== attacker) continue;
           const adjacentGroup = getGroup(position, nr, nc);
@@ -123,11 +133,11 @@ export function searchLadder(
     let legalMoves = 0;
     for (const move of candidates) {
       const [mr, mc] = move.split(",").map(Number);
-      if (options.isLegalMove && !options.isLegalMove(position, mr, mc, toMove)) continue;
+      if (options.isLegalMove && !options.isLegalMove(position, mr, mc, toMove, path)) continue;
       const played = playMove(position, mr, mc, toMove);
       if (!played) continue;
       legalMoves += 1;
-      children.push({ move, result: visit(played.board, otherColor(toMove), depth + 1) });
+      children.push({ move, result: visit(played.board, otherColor(toMove), depth + 1, [...path, positionKey + "|" + toMove]) });
     }
 
     if (legalMoves === 0) {
@@ -165,7 +175,8 @@ export function searchLadder(
   };
 
   const firstPlayer = options.firstPlayer ?? "attacker";
-  const result = visit(board, firstPlayer === "attacker" ? attacker : targetColor, 0);
+  const initialPlayer = firstPlayer === "attacker" ? attacker : targetColor;
+  const result = visit(board, initialPlayer, 0, [boardKey(board) + "|" + initialPlayer]);
   return {
     status: result.status,
     target: { row, col },
