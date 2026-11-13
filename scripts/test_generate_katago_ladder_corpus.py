@@ -37,7 +37,7 @@ class GeneratedLadderCorpusTests(unittest.TestCase):
                 generator.classify_tactical_features(board, tuple(case["target"]), case["attacker"]),
             )
             self.assertIn(
-                "edge-target" if case["targetRegion"] != "interior" else "target-two-liberties" if case["targetLibertiesAtRoot"] == 2 else f"target-{case['targetLibertiesAtRoot']}-liberties" if case["targetLibertiesAtRoot"] == 3 else "target-in-atari",
+                "edge-band-target" if case["targetRegion"] != "interior" else "target-two-liberties" if case["targetLibertiesAtRoot"] == 2 else f"target-{case['targetLibertiesAtRoot']}-liberties" if case["targetLibertiesAtRoot"] == 3 else "target-in-atari",
                 case["tacticalFeatures"],
             )
 
