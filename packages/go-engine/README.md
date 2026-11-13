@@ -50,3 +50,22 @@ The V7 encoder accepts explicit ladder masks and area ownership; `deriveV7RuleFe
 The runtime package now exposes `deriveV7RuleFeatures` to derive the current and two historical ladder masks and convert Benson pass-alive ownership into the V7 self/opponent encoding.
 
 The V7 adapter now derives `opponentEscape` in TypeScript. For each opponent chain with exactly two liberties, it tests each legal attacking liberty and marks the move when a defender-first ladder read proves capture, matching the role of KataGo `iterLadders` working-move points. Callers may still inject a precomputed mask. This is a semantic port of the escape-point procedure, not yet a byte-for-byte parity guarantee: the underlying ladder reader remains bounded and lacks full KataGo handling for ko, snapback, and complex chain changes.
+
+
+### Generated KataGo ladder differential corpus
+
+The CI oracle job deterministically generates 48 additional legal 9x9 local
+positions (seed `20261113`) with target chains in one to three liberties.
+The generator rejects positions containing any zero-liberty setup group,
+labels accepted positions by calling the pinned official C++ adapter, and
+writes both `tests/katago-ladder/generated-cases.json` and the TypeScript
+test-data module. CI then replays the generated corpus against the official
+oracle and exercises every position in the TypeScript reader. TypeScript
+status differences are reported as differential diagnostics rather than
+silently rewritten to match the C++ boolean result; the test still verifies
+that the TS reader returns a valid status and a nonempty search count.
+
+The generator is deterministic and separately unit-tested for seed
+reproducibility, live setup groups, and target-liberty constraints. The
+generated corpus is recreated in CI and is not committed as a static,
+hand-maintained snapshot.
