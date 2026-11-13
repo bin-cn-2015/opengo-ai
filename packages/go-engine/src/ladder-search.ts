@@ -138,13 +138,17 @@ export function searchLadder(
 
     const children: { move: string; result: NodeResult }[] = [];
     let legalMoves = 0;
+    // A legality hook needs the current position as part of the history when
+    // validating the next move (superko checks compare the resulting board
+    // against all positions already reached, including this one).
+    const movePath = [...path, positionKey + "|" + toMove];
     for (const move of candidates) {
       const [mr, mc] = move.split(",").map(Number);
-      if (options.isLegalMove && !options.isLegalMove(position, mr, mc, toMove, path)) continue;
+      if (options.isLegalMove && !options.isLegalMove(position, mr, mc, toMove, movePath)) continue;
       const played = playMove(position, mr, mc, toMove);
       if (!played) continue;
       legalMoves += 1;
-      children.push({ move, result: visit(played.board, otherColor(toMove), depth + 1, [...path, positionKey + "|" + toMove]) });
+      children.push({ move, result: visit(played.board, otherColor(toMove), depth + 1, movePath) });
     }
 
     if (legalMoves === 0) {
@@ -257,8 +261,9 @@ export function findLadderEscapePoints(
 
       for (const liberty of group.liberties) {
         const [attackRow, attackCol] = liberty.split(",").map(Number);
+        const attackPath = [...(options.initialPath ?? []), boardKey(board) + "|" + attacker];
         if (options.isLegalMove &&
-            !options.isLegalMove(board, attackRow, attackCol, attacker, options.initialPath ?? [])) continue;
+            !options.isLegalMove(board, attackRow, attackCol, attacker, attackPath)) continue;
         const played = playMove(board, attackRow, attackCol, attacker);
         if (!played) continue;
 
@@ -273,7 +278,14 @@ export function findLadderEscapePoints(
           survivingAnchor[0],
           survivingAnchor[1],
           attacker,
-          { ...options, firstPlayer: "defender", targetStones: group.stones },
+          {
+            ...options,
+            firstPlayer: "defender",
+            targetStones: group.stones,
+            // The setup attack is already a played move; retain its parent
+            // position so subsequent superko checks see the complete path.
+            initialPath: attackPath,
+          },
         );
         if (reading.status === "captured") {
           mask[attackRow * size + attackCol] = 1;
