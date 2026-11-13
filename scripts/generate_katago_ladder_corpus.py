@@ -65,10 +65,12 @@ def classify_tactical_features(
     if len(target_stones) > 1:
         features.append("multi-stone-target")
     row, col = target
-    if row in (0, size - 1) or col in (0, size - 1):
-        features.append("edge-target")
-    if row in (0, size - 1) and col in (0, size - 1):
-        features.append("corner-target")
+    near_top_or_bottom = row <= 1 or row >= size - 2
+    near_left_or_right = col <= 1 or col >= size - 2
+    if near_top_or_bottom or near_left_or_right:
+        features.append("edge-band-target")
+    if near_top_or_bottom and near_left_or_right:
+        features.append("corner-band-target")
 
     seen_attacker: set[tuple[int, int]] = set()
     for stone in target_stones:
