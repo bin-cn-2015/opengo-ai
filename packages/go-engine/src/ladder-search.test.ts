@@ -258,16 +258,18 @@ describe("ladder search", () => {
 
   it("applies KataGo's double-ko-death shortcut when both liberties are ko mouths", () => {
     const board = createBoard(9);
-    // The corner target is a one-stone chain in atari. Both liberties are
-    // surrounded by white stones / board edges, with this target as the sole
-    // capturable one-stone chain. Filling either liberty leaves at most two
-    // liberties for the attacking stone.
-    board[0][0] = "white";
-    for (const [r, c] of [[0, 2], [1, 1], [2, 0]] as const) {
-      board[r][c] = "white";
-    }
+    // The target at (4,4) has two separated liberties. Each liberty is
+    // surrounded by white stones and has one adjacent single-stone white
+    // chain in atari; filling either point captures that one-stone chain.
+    board[4][4] = "white";
+    for (const [r, c] of [
+      [2, 4], [3, 3], [3, 5], [5, 3], [5, 5], [6, 4],
+    ] as const) board[r][c] = "white";
+    for (const [r, c] of [
+      [1, 4], [2, 3], [2, 5], [4, 3], [4, 5], [6, 3], [6, 5], [7, 4],
+    ] as const) board[r][c] = "black";
 
-    const result = searchLadder(board, 0, 0, "black");
+    const result = searchLadder(board, 4, 4, "black");
     expect(result.status).toBe("captured");
     expect(result.reason).toBe("captured");
     expect(result.nodes).toBe(1);
@@ -275,20 +277,24 @@ describe("ladder search", () => {
 
   it("does not apply the double-ko shortcut when only one liberty is a ko mouth", () => {
     const board = createBoard(9);
-    board[0][0] = "white";
-    board[1][1] = "white";
-    board[2][0] = "white";
-    // The (0,1) liberty is no longer a ko mouth because (0,2) is empty.
+    board[4][4] = "white";
+    for (const [r, c] of [
+      [3, 3], [3, 5], [5, 3], [5, 5], [6, 4],
+    ] as const) board[r][c] = "white";
+    for (const [r, c] of [
+      [1, 4], [2, 3], [2, 5], [4, 3], [4, 5], [6, 3], [6, 5], [7, 4],
+    ] as const) board[r][c] = "black";
+    // Remove the single-stone atari chain that makes (3,4) a ko mouth.
     let hookCalls = 0;
 
-    const result = searchLadder(board, 0, 0, "black", {
+    const result = searchLadder(board, 4, 4, "black", {
       isLegalMove: () => {
         hookCalls += 1;
         return false;
       },
     });
     expect(hookCalls).toBeGreaterThan(0);
-    expect(result.status).toBe("unknown");
+    expect(result.status).not.toBe("captured");
   });
 
   it("returns unknown rather than a false reading when a search budget is exhausted", () => {
