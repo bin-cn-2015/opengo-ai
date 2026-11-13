@@ -115,6 +115,13 @@ export function searchLadder(
       cutoff = "node-limit";
       return { status: "unknown", pv: [], reason: "node-limit" };
     }
+    // Repetition legality must be checked before terminal capture detection:
+    // an illegal ko recapture may appear to remove the target on the board,
+    // but that resulting position cannot be used as a capture proof.
+    const positionKey = boardKey(position);
+    if (path.includes(positionKey + "|" + toMove)) {
+      return { status: "unknown", pv: [], reason: "ko-or-no-legal-move" };
+    }
     // This reader asks whether any fragment of the original target can be
     // forced into capture. Once a fragment is captured, the existential
     // target is captured even if another fragment survives elsewhere.
@@ -136,10 +143,6 @@ export function searchLadder(
       return { status: "unknown", pv: [], reason: "depth-limit" };
     }
 
-    const positionKey = boardKey(position);
-    if (path.includes(positionKey + "|" + toMove)) {
-      return { status: "unknown", pv: [], reason: "ko-or-no-legal-move" };
-    }
     // Do not memoize by board alone: a repeated board is unresolved only
     // when it already occurs on this exact search path. Different paths can
     // therefore have different outcomes even for identical board/side keys.
