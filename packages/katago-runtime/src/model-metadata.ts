@@ -146,6 +146,10 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
   const metaEncoderVersion = modelVersion >= 15
     ? positiveOrZero(metadata, "katago.metaEncoderVersion")
     : positiveOrZero(metadata, "katago.metaEncoderVersion", 0);
+  if ((metaEncoderVersion > 0) !== (numInputMetaChannels > 0)) {
+    throw new ModelMetadataError("katago.metaEncoderVersion and katago.numInputMetaChannels disagree about the InputMeta tensor.");
+  }
+  required(metadata, "katago.build.requireExactNNLen");
 
   if (modelVersion >= 15) {
     booleanValue(metadata, "katago.preferPassAliveUnderSuicideRules", false);
