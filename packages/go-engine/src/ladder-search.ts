@@ -16,6 +16,8 @@ export interface LadderSearchOptions {
   maxDepth?: number;
   /** Optional history/superko legality hook supplied by the caller. */
   isLegalMove?: (board: Board, row: number, col: number, color: Stone) => boolean;
+  /** Start with the defender to move after an attacker-first setup move. */
+  firstPlayer?: "attacker" | "defender";
 }
 
 export interface LadderSearchResult {
@@ -162,7 +164,8 @@ export function searchLadder(
     return result;
   };
 
-  const result = visit(board, attacker, 0);
+  const firstPlayer = options.firstPlayer ?? "attacker";
+  const result = visit(board, firstPlayer === "attacker" ? attacker : targetColor, 0);
   return {
     status: result.status,
     target: { row, col },
@@ -193,6 +196,64 @@ export function findLadderedStones(
       const result = searchLadder(board, row, col, attacker, options);
       if (result.status === "captured") {
         for (const [r, c] of group.stones) mask[r * size + c] = 1;
+      }
+    }
+  }
+  return mask;
+}
+
+
+/**
+ * Match KataGo iterLadders' feature-17 workingMoves output for opponent
+ * chains with exactly two liberties: mark each legal attacking liberty for
+ * which the defender-first ladder reader still proves capture.
+ *
+ * The returned points are the attack locations that create a ladder, not
+ * arbitrary liberties or all liberties of laddered stones.
+ */
+export function findLadderEscapePoints(
+  board: Board,
+  opponent: Stone,
+  options: LadderSearchOptions = {},
+): Uint8Array {
+  const size = board.length;
+  const mask = new Uint8Array(size * size);
+  const targetColor = opponent;
+  const attacker = otherColor(targetColor);
+  const visited = new Set<string>();
+
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) {
+      if (board[row][col] !== targetColor) continue;
+      const key = `${row},${col}`;
+      if (visited.has(key)) continue;
+      const group = getGroup(board, row, col);
+      for (const [r, c] of group.stones) visited.add(`${r},${c}`);
+      if (group.liberties.size !== 2) continue;
+
+      for (const liberty of group.liberties) {
+        const [attackRow, attackCol] = liberty.split(",").map(Number);
+        if (options.isLegalMove &&
+            !options.isLegalMove(board, attackRow, attackCol, attacker)) continue;
+        const played = playMove(board, attackRow, attackCol, attacker);
+        if (!played) continue;
+
+        const survivingAnchor = group.stones.find(([r, c]) => played.board[r]?.[c] === targetColor);
+        if (!survivingAnchor) {
+          mask[attackRow * size + attackCol] = 1;
+          continue;
+        }
+
+        const reading = searchLadder(
+          played.board,
+          survivingAnchor[0],
+          survivingAnchor[1],
+          attacker,
+          { ...options, firstPlayer: "defender" },
+        );
+        if (reading.status === "captured") {
+          mask[attackRow * size + attackCol] = 1;
+        }
       }
     }
   }
