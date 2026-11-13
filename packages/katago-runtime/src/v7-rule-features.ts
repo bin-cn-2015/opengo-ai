@@ -4,7 +4,8 @@ import {
   type Board,
   type Stone,
 } from "../../go-engine/src";
-import type { KataGoV7Position, V7LadderMasks } from "./feature-encoder-v7";
+import { encodeKataGoV7, type EncodedKataGoV7Inputs, type KataGoV7Position, type V7LadderMasks } from "./feature-encoder-v7";
+import type { KataGoOnnxMetadata } from "./model-metadata";
 
 export interface V7RuleFeatureOptions {
   /** Exact KataGo-compatible iterLadders escape-point plane. Never guessed. */
@@ -97,4 +98,22 @@ export function deriveV7RuleFeatures(
     },
     areaOwners: encodeAreaOwners(current, currentPlayer),
   };
+}
+
+
+/**
+ * Complete V7 input-encoding entry point for callers that have board history
+ * but do not want to precompute ladder and area planes themselves.
+ */
+export function encodeKataGoV7WithDerivedRules(
+  position: Omit<KataGoV7Position, "ladderMasks" | "areaOwners">,
+  metadata: KataGoOnnxMetadata,
+  options: V7RuleFeatureOptions,
+): EncodedKataGoV7Inputs {
+  const derived = deriveV7RuleFeatures(position, options);
+  return encodeKataGoV7({
+    ...position,
+    ladderMasks: derived.ladderMasks,
+    areaOwners: derived.areaOwners,
+  }, metadata);
 }
