@@ -15,7 +15,7 @@ export interface LadderSearchOptions {
   /** Maximum ply depth. A cutoff returns unknown, never a guess. */
   maxDepth?: number;
   /** Optional history/superko legality hook supplied by the caller. */
-  isLegalMove?: (board: Board, row: number, col: number, color: Stone, path: readonly string[]) => boolean;
+  isLegalMove?: (board: Board, row: number, col: number, color: Stone, path?: readonly string[]) => boolean;
   /** Start with the defender to move after an attacker-first setup move. */
   firstPlayer?: "attacker" | "defender";
 }
