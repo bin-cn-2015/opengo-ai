@@ -50,7 +50,13 @@ function adjacentPoints(row: number, col: number, size: number): [number, number
 }
 
 /**
- * Tactical ladder reading for a single chain.
+ * Tactical ladder reading for a target chain and any disconnected target
+ * fragments supplied through targetStones.
+ *
+ * A capture proof is existential across those fragments: capturing any
+ * originally surviving fragment proves "captured". Fragments with more than
+ * two liberties are not searched as ladder candidates, but do not suppress
+ * continued reading of other threatened fragments.
  *
  * This is a bounded, rules-engine-level reader, not a full KataGo iterLadders
  * clone: it searches direct ladder extensions, captures of adjacent atari
