@@ -50,6 +50,20 @@ describe("ladder search", () => {
   });
 
 
+
+  it("treats a root position already present in supplied game history as unresolved repetition", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
+    board[5][4] = "black";
+    const result = searchLadder(board, 4, 4, "black", {
+      initialPath: [`${board.map(row => row.map(stone => stone ?? ".").join("")).join("/")}|black`],
+    });
+    expect(result.status).toBe("unknown");
+    expect(result.reason).toBe("ko-or-no-legal-move");
+  });
+
   it("continues tracking all original target fragments after a chain split", () => {
     const board = createBoard(9);
     board[4][4] = "white";
