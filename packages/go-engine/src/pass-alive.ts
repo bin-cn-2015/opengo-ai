@@ -175,6 +175,7 @@ export function calculatePassAliveArea(board: Board): PassAliveAreaResult {
   }
 
   const assignedRegions: PassAliveRegion[] = [];
+  const conflictingOwnership = Array.from({ length: size }, () => Array<boolean>(size).fill(false));
   for (const color of ["black", "white"] as const) {
     const opponent: Stone = color === "black" ? "white" : "black";
     for (const regionIndex of fixed[color].regions) {
@@ -187,7 +188,13 @@ export function calculatePassAliveArea(board: Board): PassAliveAreaResult {
         board[r][c] === opponent && passAliveStones[r][c]);
       if (containsOpponentAlive) continue;
       for (const [r, c] of region.points) {
-        if (board[r][c] === null) owners[r][c] = color;
+        if (board[r][c] !== null || conflictingOwnership[r][c]) continue;
+        if (owners[r][c] !== null && owners[r][c] !== color) {
+          owners[r][c] = null;
+          conflictingOwnership[r][c] = true;
+        } else {
+          owners[r][c] = color;
+        }
       }
       assignedRegions.push({ color, points: region.points, borderingGroups: bordering });
     }
