@@ -42,6 +42,64 @@ interface NodeResult {
 const DEFAULT_MAX_NODES = 20_000;
 const DEFAULT_MAX_DEPTH = 80;
 
+/**
+ * KataGo's wouldBeKoCapture predicate: an empty point is surrounded only by
+ * the opposing color or board edges, with exactly one adjacent capturable
+ * opposing chain, and that chain consists of a single stone.
+ */
+function isKoMouth(board: Board, row: number, col: number, player: Stone): boolean {
+  if (board[row]?.[col] !== null) return false;
+  const opponent = otherColor(player);
+  let capturableGroups = 0;
+  const seen = new Set<string>();
+  for (const [nr, nc] of adjacentPoints(row, col, board.length)) {
+    if (board[nr][nc] !== opponent) return false;
+    const key = `${nr},${nc}`;
+    if (seen.has(key)) continue;
+    const group = getGroup(board, nr, nc);
+    for (const [gr, gc] of group.stones) seen.add(`${gr},${gc}`);
+    if (group.liberties.size === 1) {
+      if (group.stones.length !== 1) return false;
+      capturableGroups += 1;
+    }
+  }
+  // Off-board neighbors are walls, so only in-board non-opponent neighbors
+  // invalidate the predicate. Exactly one adjacent group must be capturable.
+  for (const [nr, nc] of adjacentPoints(row, col, board.length)) {
+    if (board[nr][nc] !== opponent) return false;
+  }
+  return capturableGroups === 1;
+}
+
+/** Exact post-play liberty count, capped at the requested threshold. */
+function libertiesAfterPlay(
+  board: Board,
+  row: number,
+  col: number,
+  player: Stone,
+  cap: number,
+): number {
+  const played = playMove(board, row, col, player);
+  if (!played) return 0;
+  return Math.min(getGroup(played.board, row, col).liberties.size, cap);
+}
+
+/** True if any opponent chain adjacent to this target group is in atari. */
+function hasLibertyGainingCaptures(board: Board, stones: readonly [number, number][], attacker: Stone): boolean {
+  const seen = new Set<string>();
+  for (const [r, c] of stones) {
+    for (const [nr, nc] of adjacentPoints(r, c, board.length)) {
+      if (board[nr][nc] !== attacker) continue;
+      const key = `${nr},${nc}`;
+      if (seen.has(key)) continue;
+      const group = getGroup(board, nr, nc);
+      for (const [gr, gc] of group.stones) seen.add(`${gr},${gc}`);
+      if (group.liberties.size === 1) return true;
+    }
+  }
+  return false;
+}
+
 function adjacentPoints(row: number, col: number, size: number): [number, number][] {
   const candidates: [number, number][] = [
     [row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1],
@@ -146,6 +204,24 @@ export function searchLadder(
     // Do not memoize by board alone: a repeated board is unresolved only
     // when it already occurs on this exact search path. Different paths can
     // therefore have different outcomes even for identical board/side keys.
+
+    // KataGo's conservative double-ko-death shortcut. It applies only
+    // on the attacker turn with a two-liberty target: both liberties must be
+    // ko mouths, an attacker play at either must leave at most two liberties,
+    // and the target must have no adjacent atari attacker that it can capture
+    // to gain liberties. This is a local tactical assumption, not a complete
+    // model of finite ko-threat counting.
+    if (toMove === attacker) {
+      const doubleKoDeath = threatenedGroups.some(group => {
+        if (group.liberties.size !== 2) return false;
+        const liberties = [...group.liberties].map(point => point.split(",").map(Number) as [number, number]);
+        return liberties.every(([lr, lc]) =>
+          isKoMouth(position, lr, lc, attacker) &&
+          libertiesAfterPlay(position, lr, lc, attacker, 3) <= 2
+        ) && !hasLibertyGainingCaptures(position, group.stones, attacker);
+      });
+      if (doubleKoDeath) return { status: "captured", pv: [], reason: "captured" };
+    }
 
     const candidates = new Set<string>(threatenedGroups.flatMap(group => [...group.liberties]));
     // A defender may also capture an adjacent attacking chain in atari. Its
