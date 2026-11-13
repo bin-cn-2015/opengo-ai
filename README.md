@@ -9,7 +9,8 @@ Open-source, browser-first Go AI powered by KataGo neural network models.
 - Play Go in the browser on 9×9, 13×13, and 19×19 boards.
 - Implement Go rules and search in TypeScript, independently of KataGo's search engine.
 - Use official pretrained KataGo models (no model training).
-- Explore WebGPU-first inference with WebGL and WASM fallbacks.
+- Implement the engine/runtime in TypeScript with WASM, WebGL, and WebGPU inference backends.
+- Support the current official KataGo Transformer models (model version 17+), verified against reference outputs.
 - Import/export SGF and review games move by move.
 - Run locally and offline after application/model assets are cached.
 
@@ -29,8 +30,8 @@ npm run build
 - `apps/web` — browser UI
 - `packages/go-engine` — board state and rules
 - `packages/mcts` — PUCT/MCTS search
-- `packages/katago-model` — model metadata, feature encoding, output decoding
-- `packages/inference/{webgpu,webgl,wasm}` — inference backends
+- `packages/katago-runtime` — TypeScript model pipeline, inference orchestration, and backend selection
+- ONNX Runtime Web (initial execution provider) — WASM, WebGL, and WebGPU tensor execution; custom kernels/adapters where needed
 - `packages/sgf` — SGF parser and serializer
 - `packages/analysis` — game review and analysis
 - `workers` — background inference/search workers
@@ -39,12 +40,12 @@ The initial scaffold keeps the first playable UI at the repository root while th
 
 ## KataGo browser runtime
 
-The P0 feasibility decision, model-format findings, runtime comparison, and verification checklist are tracked in [KATAGO_BROWSER_RUNTIME.md](./KATAGO_BROWSER_RUNTIME.md). KataGo model loading and browser inference remain unimplemented until the documented parity checks pass.
+The TypeScript-first architecture, current Transformer target, model licensing notes, and backend parity gates are documented in [KATAGO_BROWSER_RUNTIME.md](./KATAGO_BROWSER_RUNTIME.md). KataGo model loading and browser inference remain unimplemented until the documented parity checks pass.
 
 ## Model compatibility
 
-KataGo native model files are not interchangeable with ONNX models. Before selecting a browser runtime, we must verify the exact model format, network operations, feature schema, and backend operator coverage. Backend support will be claimed only after correctness and performance tests.
+The first reproducible import path may convert official `.bin.gz` weights to ONNX using KataGo's official `dumponnx` build-time tool. Browser inference, feature encoding, output decoding, and search remain TypeScript. A fully TypeScript `.bin.gz` importer is a separate milestone. WASM, WebGL, and WebGPU must each pass operator-coverage and numerical-parity tests against the latest official Transformer model.
 
 ## License
 
-License to be selected before the first public release.
+OpenGo AI's own license will be selected before the first public release. Official kata1 model weights have a separate permissive license; see the [KataGo network license](https://katagotraining.org/network_license/). Retain its required copyright and permission notice when redistributing weights.
