@@ -160,7 +160,7 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
       "katago.postProcess.varianceTimeMultiplier",
       "katago.postProcess.shorttermValueErrorMultiplier",
       "katago.postProcess.shorttermScoreErrorMultiplier",
-    ]) required(metadata, key);
+    ]) {\n      const value = Number(required(metadata, key));\n      if (!Number.isFinite(value)) throw new ModelMetadataError(`Metadata ${key} must be a finite number.`);\n    }
   }
 
   return {
