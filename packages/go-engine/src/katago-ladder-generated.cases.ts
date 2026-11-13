@@ -10,5 +10,6 @@ export interface GeneratedLadderCase {
   targetRegion: "corner-band" | "edge-band" | "interior";
   targetLibertiesAtRoot: number;
   targetStonesAtRoot: number;
+  tacticalFeatures: string[];
 }
 export const generatedLadderCases: GeneratedLadderCase[] = [];
