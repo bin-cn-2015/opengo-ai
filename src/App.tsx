@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyAction, createGame, isGameOver, type GameState } from "../packages/go-engine/src";
+import { applyAction, calculateScore, createGame, getTerritory, isGameOver, setScoringConfig, toggleDeadGroup, type GameState, type ScoringRule } from "../packages/go-engine/src";
 
 const SIZE = 19;
 
@@ -8,14 +8,21 @@ export default function App() {
   const points = useMemo(() => Array.from({ length: SIZE }, (_, i) => i), []);
   const board = game.board;
   const finished = isGameOver(game);
+  const territory = useMemo(() => getTerritory(game.board, game.deadStones), [game.board, game.deadStones]);
+  const score = finished ? calculateScore(game) : null;
 
   function reset() {
     setGame(createGame(SIZE));
   }
 
   function play(row: number, col: number) {
+    if (finished) { setGame(toggleDeadGroup(game, row, col)); return; }
     const next = applyAction(game, { type: "play", row, col });
     if (next) setGame(next);
+  }
+
+  function configureScoring(rule: ScoringRule, komi: number) {
+    setGame(setScoringConfig(game, rule, komi));
   }
 
   function pass() {
@@ -44,7 +51,8 @@ export default function App() {
                 const star = [3, 9, 15].includes(r) && [3, 9, 15].includes(c);
                 return <button key={`${r}-${c}`} className="point" style={{ left: `${(c / 18) * 100}%`, top: `${(r / 18) * 100}%` }} onClick={() => play(r, c)} disabled={finished} aria-label={`Row ${r + 1}, column ${c + 1}`}>
                   {star && !stone && <span className="star" />}
-                  {stone && <span className={`stone ${stone}`} />}
+                  {stone && <span className={"stone " + stone + (game.deadStones.includes(r + "," + c) ? " dead" : "")} />}
+                  {!stone && finished && territory.owners[r][c] && <span className={"territory " + territory.owners[r][c]} />}
                 </button>;
               }))}
             </div>
@@ -59,7 +67,13 @@ export default function App() {
         <aside className="side-panel">
           <div className="turn-card"><span className="eyebrow">{finished ? "GAME FINISHED" : "TO PLAY"}</span><div className="turn-line">{!finished && <span className={`turn-stone ${game.toMove}`} />}<strong>{finished ? "Two passes" : game.toMove === "black" ? "Black" : "White"}</strong></div><p>{finished ? "Both players passed. Scoring is the next milestone." : "Take your turn on the board."}</p></div>
           <div className="feature-card"><span className="eyebrow">PROJECT ROADMAP</span><ul><li className="done">Repository bootstrap</li><li className="done">Core board rules & passes</li><li className="active">Rule edge cases & scoring</li><li>PUCT / MCTS search</li><li>KataGo model adapter</li><li>WebGPU · WebGL · WASM</li><li>SGF review & analysis</li></ul></div>
-          <div className="note">Pass and two-pass game termination are implemented. AI inference, scoring, SGF and full tournament-rule options are still in development.</div>
+          <div className="feature-card scoring-card">
+            <span className="eyebrow">SCORING SETTINGS</span>
+            <label>Rule<select value={game.scoringRule} onChange={(e) => configureScoring(e.target.value as ScoringRule, game.komi)}><option value="area">Chinese · Area</option><option value="territory">Japanese · Territory</option></select></label>
+            <label>Komi<input type="number" min="0" max="100" step="0.5" value={game.komi} onChange={(e) => configureScoring(game.scoringRule, Number(e.target.value))} /></label>
+            {finished && score && <div className="score-result"><span className="eyebrow">FINAL SCORE</span><strong>{score.winner === "draw" ? "Draw" : (score.winner === "black" ? "Black" : "White") + " wins"}</strong><p>Black {score.black.toFixed(1)} — White {score.white.toFixed(1)}</p><p>Territory B/W: {score.territory.black}/{score.territory.white} · Neutral: {score.territory.neutral}</p><p>Prisoners B/W: {score.prisoners.black}/{score.prisoners.white}</p><small>Tap a stone to mark or unmark its whole chain as dead.</small></div>}
+          </div>
+          <div className="note">{finished ? "Scoring is provisional until both players agree on dead groups." : "After two passes, mark agreed dead groups and review the provisional score."}</div>
         </aside>
       </section>
       <footer><span>OPEN SOURCE, BUILT ONE MOVE AT A TIME.</span><a href="https://github.com/bin-cn-2015/opengo-ai">VIEW ON GITHUB ↗</a></footer>
