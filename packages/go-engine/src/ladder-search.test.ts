@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBoard } from "./index";
+import { boardKey, createBoard } from "./index";
 import { findLadderedStones, findLadderEscapePoints, searchLadder } from "./ladder-search";
 
 describe("ladder search", () => {
@@ -58,7 +58,7 @@ describe("ladder search", () => {
     board[4][3] = "black";
     board[5][4] = "black";
     const result = searchLadder(board, 4, 4, "black", {
-      initialPath: [`${board.map(row => row.map(stone => stone ?? ".").join("")).join("/")}|black`],
+      initialPath: [boardKey(board) + "|black"],
     });
     expect(result.status).toBe("unknown");
     expect(result.reason).toBe("ko-or-no-legal-move");
