@@ -100,7 +100,7 @@ export function boardsEqual(a: Board, b: Board): boolean {
 
 export function createGame(size = 19, koRule: KoRule = "situational"): GameState {
   const board = createBoard(size);
-  const initialKey = boardKey(board);
+  const initialKey = positionKey(board, "black", koRule);
   return {
     board,
     toMove: "black",
