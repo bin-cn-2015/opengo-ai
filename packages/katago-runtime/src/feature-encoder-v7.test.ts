@@ -124,6 +124,20 @@ describe("encodeKataGoV7", () => {
     expect(encoded.spatial[at(12, 0, 0)]).toBe(1);
   });
 
+  it("encodes opponent ladder escape moves even when the marked point is empty", () => {
+    const opponentEscape = new Uint8Array(25);
+    opponentEscape[12] = 1;
+    const encoded = encodeKataGoV7(emptyPosition({
+      ladderMasks: {
+        current: new Uint8Array(25),
+        previous: new Uint8Array(25),
+        previousPrevious: new Uint8Array(25),
+        opponentEscape,
+      },
+    }), metadata);
+    expect(encoded.spatial[at(17, 2, 2)]).toBe(1);
+  });
+
   it("encodes rules, komi, pass-end and button global features", () => {
     const encoded = encodeKataGoV7(emptyPosition({
       passWouldEndPhase: true,
