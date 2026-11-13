@@ -74,8 +74,8 @@ export function searchLadder(
   if (!Number.isInteger(maxDepth) || maxDepth < 1) throw new RangeError("maxDepth must be a positive integer.");
 
   const targetPoints = (options.targetStones ?? initialGroup.stones).map(([r, c]) => [r, c] as const);
-  if (targetPoints.length === 0 || targetPoints.some(([r, c]) => !Number.isInteger(r) || !Number.isInteger(c) || r < 0 || c < 0 || r >= board.length || c >= board.length || board[r]?.[c] !== targetColor)) {
-    throw new RangeError("targetStones must identify existing stones of the target color.");
+  if (targetPoints.length === 0 || targetPoints.some(([r, c]) => !Number.isInteger(r) || !Number.isInteger(c) || r < 0 || c < 0 || r >= board.length || c >= board.length)) {
+    throw new RangeError("targetStones must contain valid board coordinates.");
   }
   const memo = new Map<string, NodeResult>();
   let nodes = 0;
