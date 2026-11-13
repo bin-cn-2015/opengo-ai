@@ -3,6 +3,15 @@ export {
   isBackendPreference,
   resolveBackend,
 } from "./backend";
+export {
+  assertTargetTransformerV17,
+  ModelMetadataError,
+  parseKataGoOnnxMetadata,
+  toModelInfo,
+} from "./model-metadata";
+export { validateKataGoGraphNames } from "./model-contract";
+export type { KataGoOnnxMetadata, OnnxMetadata } from "./model-metadata";
+export type { OnnxGraphNames } from "./model-contract";
 export type {
   AnalysisUpdate,
   AnalyzeRequest,
