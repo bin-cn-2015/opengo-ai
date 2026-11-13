@@ -180,7 +180,7 @@ Implemented in `packages/katago-runtime`:
 
 Still not implemented or verified:
 - Actual export and inspection of the exact current official `kata1-tf3-b11c768-s12382M-d6533M` weights.
-- V7 feature encoder initial implementation: NCHW 22-plane spatial tensor, 19 global features, InputMask, history/pass planes, ko planes, relative area planes, second-encore planes, and validation of model/input dimensions. It currently consumes explicit ladder masks and pass-alive/independent-life area ownership from the rules layer; those expensive rule-derived algorithms are not yet implemented in TypeScript or parity-validated.
+- Exact end-to-end V7 parity against official KataGo, including native TypeScript ladder-search and pass-alive/independent-life area derivation.
 - KataGo output semantic decoding and numerical parity.
 - TypeScript MCTS/PUCT and analysis parity.
 - Full operator-placement audit and numerical parity for all three execution backends.
