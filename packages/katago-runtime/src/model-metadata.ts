@@ -14,6 +14,8 @@ export interface KataGoOnnxMetadata {
   numScoreValueChannels: number;
   numOwnershipChannels: number;
   metaEncoderVersion: number;
+  preferPassAliveUnderSuicideRules: boolean;
+  preferExcludeTerritoryAdjacentToAtari: boolean;
   nnXLen: number;
   nnYLen: number;
   requireExactNNLen: boolean;
