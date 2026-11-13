@@ -144,6 +144,11 @@ describe("encodeKataGoV7", () => {
     expect(encoded.global[17]).toBe(1);
   });
 
+  it("encodes the simple-ko point in the normal-play ko-ban plane", () => {
+    const encoded = encodeKataGoV7(emptyPosition({ simpleKoPoint: 12 }), metadata);
+    expect(encoded.spatial[at(6, 2, 2)]).toBe(1);
+  });
+
   it("encodes ko bans and encore recapture blocks into V7 planes", () => {
     const superKoBanned = new Uint8Array(25);
     const koRecapBlocked = new Uint8Array(25);
