@@ -99,6 +99,46 @@ describe("ladder search", () => {
     expect(result.status).toBe("escaped");
   });
 
+  it("treats a two-liberty target as escaped when the defender is to move", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[4][3] = "black";
+    let hookCalls = 0;
+
+    const result = searchLadder(board, 4, 4, "black", {
+      firstPlayer: "defender",
+      isLegalMove: () => {
+        hookCalls += 1;
+        return true;
+      },
+    });
+
+    expect(result.status).toBe("escaped");
+    expect(hookCalls).toBe(0);
+  });
+
+  it("does not let a two-liberty fragment hide a separate atari fragment on the defender turn", () => {
+    const board = createBoard(9);
+    board[2][2] = "white";
+    board[6][6] = "white";
+    for (const [r, c] of [[1, 2], [2, 1], [3, 2], [5, 6], [6, 5]] as const) {
+      board[r][c] = "black";
+    }
+    const checked: [number, number][] = [];
+
+    const result = searchLadder(board, 2, 2, "black", {
+      firstPlayer: "defender",
+      targetStones: [[2, 2], [6, 6]],
+      isLegalMove: (_position, row, col) => {
+        checked.push([row, col]);
+        return false;
+      },
+    });
+
+    expect(result.status).toBe("unknown");
+    expect(checked).toEqual([[2, 3]]);
+  });
+
   it("captures the remaining threatened fragment when the defender can save only one of two", () => {
     const board = createBoard(9);
     board[2][2] = "white";
