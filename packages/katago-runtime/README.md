@@ -30,7 +30,7 @@ await session.run(tensors);
 
 ## Not implemented / not yet verified
 
-- V7 feature encoding from Go board history.
+- Exact end-to-end V7 parity against official KataGo, including native TypeScript ladder-search and pass-alive/independent-life area derivation.
 - KataGo output-head semantic decoding (softmax, value perspective, score scaling, ownership transforms).
 - MCTS/PUCT search and KataGo analysis parity.
 - Automatic browser-side parsing of ONNX `metadata_props`; the current adapter consumes a JSON sidecar.
