@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createBoard } from "./index";
-import { findLadderedStones, searchLadder } from "./ladder-search";
+import { findLadderedStones, findLadderEscapePoints, searchLadder } from "./ladder-search";
 
 describe("ladder search", () => {
   it("rejects a target that is not an opponent stone", () => {
@@ -36,5 +36,23 @@ describe("ladder search", () => {
     const result = searchLadder(board, 4, 4, "black", { maxNodes: 1 });
     expect(result.status).toBe("unknown");
     expect(result.reason).toBe("node-limit");
+  });
+});
+
+
+describe("ladder escape points", () => {
+  it("marks an attacking liberty that forces a defender-first ladder", () => {
+    const board = createBoard(9);
+    board[3][3] = "white";
+    board[2][3] = "black";
+    board[3][2] = "black";
+    board[5][3] = "black";
+    board[4][2] = "black";
+    board[4][4] = "black";
+
+    const mask = findLadderEscapePoints(board, "white");
+    expect(mask[3 * 9 + 4]).toBe(1);
+    // The other liberty is suicide for the attacker and must not be emitted.
+    expect(mask[4 * 9 + 3]).toBe(0);
   });
 });
