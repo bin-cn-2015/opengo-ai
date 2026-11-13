@@ -84,6 +84,14 @@
     "expectedNodes": {
       "type": "integer",
       "minimum": 0
+    },
+    "typescriptExpected": {
+      "enum": [
+        "captured",
+        "escaped",
+        "unknown"
+      ],
+      "description": "Optional tri-state expectation for the TypeScript reader; the C++ oracle ignores this field."
     }
   },
   "additionalProperties": false
