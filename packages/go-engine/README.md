@@ -56,11 +56,15 @@ The V7 adapter now derives `opponentEscape` in TypeScript. For each opponent cha
 
 The CI oracle job deterministically generates 96 additional legal 9x9 local
 positions (seed `20261113`) with target chains in one to three liberties.
-The generator rejects positions containing any zero-liberty setup group,
-labels accepted positions by calling the pinned official C++ adapter, and
-writes both `tests/katago-ladder/generated-cases.json` and the TypeScript
-test-data module. CI replays the generated corpus against the official oracle
-and then runs every position through the TypeScript reader. The differential
+It stratifies target locations evenly across corner bands, edge bands, and
+interior points (32 cases per region), and alternates the side to move evenly
+(48 attacker-first and 48 defender-first). Each fixture records its region,
+root target-chain size, and root liberty count. The generator rejects
+positions containing any zero-liberty setup group, labels accepted positions
+by calling the pinned official C++ adapter, and writes both
+`tests/katago-ladder/generated-cases.json` and the TypeScript test-data
+module. CI asserts the stratification metadata before replaying every
+generated position through the official oracle and TypeScript reader. The differential
 test is a strict gate: every TypeScript status must exactly match the pinned
 KataGo boolean result mapping (`captured` or `escaped`); `unknown` and any
 status divergence fail the job. This mapping is specific to the current
