@@ -345,8 +345,7 @@ export function encodeKataGoV7(
       : position.ladderMasks.previousPrevious;
     if (prevMask[point] === 1) set(15, point);
     if (prevPrevMask[point] === 1) set(16, point);
-    if (position.board[point] === opponent && liberties[point] > 1 &&
-        position.ladderMasks.opponentEscape[point] === 1) set(17, point);
+    if (position.ladderMasks.opponentEscape[point] === 1) set(17, point);
   }
 
   // Global features 5-18.
