@@ -22,9 +22,9 @@ if (reading.status === "captured") {
 const ladderMask = findLadderedStones(board, "black");
 ```
 
-The reader handles direct ladder extensions and adjacent-atari countercaptures. It uses the board's local capture/suicide rules. Simple ko and superko history are not stored in a bare `Board`; callers must supply `isLegalMove` to reject history-illegal moves. A resource cutoff always returns `unknown`.
+The reader handles direct ladder extensions and adjacent-atari countercaptures. It tracks all surviving fragments of the original target chain after a split, detects repeated board/side-to-move states as unresolved ko cycles, and passes the explored path to the optional `isLegalMove` hook so callers can enforce simple ko or superko. A resource cutoff always returns `unknown`.
 
-This is a deliberately bounded ladder reader, not yet a byte-for-byte port of KataGo's `Board::iterLadders` implementation. In particular, multi-chain splitting, snapback, ko threats, and broader tactical escapes still need parity tests against official KataGo.
+This is a deliberately bounded ladder reader, not yet a byte-for-byte port of KataGo's `Board::iterLadders` implementation. Full snapback and ko-threat handling, tactical escapes beyond the local ladder candidate set, and exact feature parity still need comparison tests against official KataGo.
 
 ## Pass-alive area
 
@@ -42,7 +42,7 @@ This is not yet a full replacement for KataGo's `Board::calculateArea`. Suicide-
 
 ## V7 feature encoder integration
 
-The V7 encoder currently accepts ladder masks and area ownership as explicit inputs. These functions provide the rule-derived primitives, but the adapter that derives all four KataGo V7 ladder planes from current/recent board history is not yet complete. Do not substitute zero masks and claim exact model parity.
+The V7 encoder accepts explicit ladder masks and area ownership; `deriveV7RuleFeatures` now computes the current and two historical ladder masks plus `opponentEscape` from the supplied board snapshots. The bounded search means these planes are useful TS-derived features, but are not yet asserted byte-identical to KataGo's official implementation.
 
 
 ## V7 feature adapter
