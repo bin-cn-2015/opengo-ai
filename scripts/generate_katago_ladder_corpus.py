@@ -47,6 +47,42 @@ def group_and_liberties(board: list[list[str | None]], start: tuple[int, int]):
     return stones, liberties
 
 
+def classify_tactical_features(
+    board: list[list[str | None]],
+    target: tuple[int, int],
+    attacker: str,
+) -> list[str]:
+    """Describe observable local motifs; these are coverage labels, not outcome rules."""
+    size = len(board)
+    target_stones, liberties = group_and_liberties(board, target)
+    features: list[str] = []
+    if len(liberties) == 1:
+        features.append("target-in-atari")
+    elif len(liberties) == 2:
+        features.append("target-two-liberties")
+    elif len(liberties) == 3:
+        features.append("target-three-liberties")
+    if len(target_stones) > 1:
+        features.append("multi-stone-target")
+    row, col = target
+    if row in (0, size - 1) or col in (0, size - 1):
+        features.append("edge-target")
+    if row in (0, size - 1) and col in (0, size - 1):
+        features.append("corner-target")
+
+    seen_attacker: set[tuple[int, int]] = set()
+    for stone in target_stones:
+        for point in neighbors(*stone, size):
+            if board[point[0]][point[1]] != attacker or point in seen_attacker:
+                continue
+            group, group_liberties = group_and_liberties(board, point)
+            seen_attacker.update(group)
+            if len(group_liberties) == 1:
+                features.append("adjacent-attacker-in-atari")
+                return features
+    return features
+
+
 def has_only_live_groups(board: list[list[str | None]]) -> bool:
     seen: set[tuple[int, int]] = set()
     for row in range(len(board)):
@@ -115,6 +151,7 @@ def generate_candidates(count: int, seed: int = 20261113) -> list[dict[str, Any]
             "targetRegion": region,
             "targetLibertiesAtRoot": len(target_liberties),
             "targetStonesAtRoot": len(target_stones),
+            "tacticalFeatures": classify_tactical_features(board, target, attacker),
         })
     if len(accepted) != count:
         raise RuntimeError(f"generated only {len(accepted)}/{count} positions after {attempts} attempts")
