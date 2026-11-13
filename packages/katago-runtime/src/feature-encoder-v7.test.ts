@@ -13,7 +13,7 @@ const metadata: KataGoOnnxMetadata = {
   numValueChannels: 3,
   numScoreValueChannels: 6,
   numOwnershipChannels: 1,
-  metaEncoderVersion: 0,
+  metaEncoderVersion: 0,\n  preferPassAliveUnderSuicideRules: false,\n  preferExcludeTerritoryAdjacentToAtari: false,
   nnXLen: 5,
   nnYLen: 5,
   requireExactNNLen: false,
