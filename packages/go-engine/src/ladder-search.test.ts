@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBoard, playMove } from "./index";
+import { createBoard } from "./index";
 import { findLadderedStones, searchLadder } from "./ladder-search";
 
 describe("ladder search", () => {
