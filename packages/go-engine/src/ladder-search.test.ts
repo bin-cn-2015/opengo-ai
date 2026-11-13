@@ -237,6 +237,24 @@ describe("ladder search", () => {
     expect(hookCalls).toBe(0);
   });
 
+  it("uses KataGo's liberty lower bound to recognize a safe defender connection", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
+    board[5][4] = "black";
+    // The sole extension at (4,5) joins a healthy white chain with many
+    // liberties. KataGo's lower bound proves at least three without recursion.
+    for (const [r, c] of [[4, 6], [3, 6], [5, 6], [4, 7]] as const) {
+      board[r][c] = "white";
+    }
+
+    const result = searchLadder(board, 4, 4, "black", { firstPlayer: "defender" });
+    expect(result.status).toBe("escaped");
+    expect(result.principalVariation).toEqual([{ row: 4, col: 5, color: "white" }]);
+    expect(result.nodes).toBe(1);
+  });
+
   it("does not claim capture when the defender has no local candidate accepted by the legality hook", () => {
     const board = createBoard(9);
     board[4][4] = "white";
