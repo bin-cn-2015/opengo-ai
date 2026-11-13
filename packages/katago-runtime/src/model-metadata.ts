@@ -214,10 +214,11 @@ export function assertTargetTransformerV17(metadata: KataGoOnnxMetadata): void {
 export function toModelInfo(metadata: KataGoOnnxMetadata): ModelInfo {
   return {
     modelVersion: metadata.modelVersion,
-    architecture: metadata.hasNestedBottleneckBlocks ? "nested-bottleneck-transformer" :
+    architecture: metadata.name.includes("tf3-b11c768") ? "tf3-b11c768" :
+      metadata.hasNestedBottleneckBlocks ? "nested-bottleneck-transformer" :
       metadata.hasTransformerBlocks ? "transformer" : "convolutional",
-    supportedBoardSizes: metadata.requireExactNNLen
-      ? [metadata.nnXLen, metadata.nnYLen].filter((size, index, values) => values.indexOf(size) === index)
+    supportedBoardSizes: metadata.requireExactNNLen && metadata.nnXLen === metadata.nnYLen
+      ? [metadata.nnXLen]
       : undefined,
     name: metadata.name,
   };
