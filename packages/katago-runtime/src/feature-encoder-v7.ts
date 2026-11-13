@@ -306,7 +306,7 @@ export function encodeKataGoV7(
   }
 
   // Match KataGo's history visibility and phase cap.
-  let maxHistory = position.suppressHistory ? 0 : 5;
+  if (position.maxHistory !== undefined && (!Number.isInteger(position.maxHistory) || position.maxHistory < 0 || position.maxHistory > 5)) {\n    throw new RangeError("maxHistory must be an integer between 0 and 5.");\n  }\n  let maxHistory = position.suppressHistory ? 0 : 5;
   if (!position.suppressHistory && position.gameFinishedOrPastPhaseEnd) maxHistory = 1;
   maxHistory = Math.min(maxHistory, position.maxHistory ?? 5, position.validTurnsThisPhase);
   const recentMoves = maxHistory > 0 ? position.moves.slice(-maxHistory).reverse() : [];
