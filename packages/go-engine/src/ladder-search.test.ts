@@ -45,8 +45,9 @@ describe("ladder search", () => {
       },
     });
     expect(hookCalls).toBeGreaterThan(0);
-    // The root move has no ancestors, so its legality hook receives an empty path.
-    expect(observedPath).toEqual([]);
+    // The legality hook sees the current root position as prior history for
+    // checking whether the proposed move recreates an earlier board.
+    expect(observedPath).toEqual([boardKey(board) + "|black"]);
   });
 
 
@@ -109,6 +110,24 @@ describe("ladder search", () => {
 
 
 describe("ladder escape points", () => {
+  it("includes the pre-attack position in the legality history", () => {
+    const board = createBoard(9);
+    board[3][3] = "white";
+    board[2][3] = "black";
+    board[3][2] = "black";
+    board[5][3] = "black";
+    board[4][2] = "black";
+    board[4][4] = "black";
+    let observed: readonly string[] | undefined;
+    findLadderEscapePoints(board, "white", {
+      isLegalMove: (_position, _row, _col, _color, path) => {
+        observed ??= path;
+        return true;
+      },
+    });
+    expect(observed).toEqual([boardKey(board) + "|black"]);
+  });
+
   it("marks an attacking liberty that forces a defender-first ladder", () => {
     const board = createBoard(9);
     board[3][3] = "white";
