@@ -1,7 +1,7 @@
 [
   {
-    "id": "double-ko-death",
-    "provenance": "Board::wouldBeKoCapture + Board::getNumLibertiesAfterPlay + Board::hasLibertyGainingCaptures",
+    "id": "double-ko-guard-rejects-three-liberty-connection",
+    "provenance": "Both ko mouths pass wouldBeKoCapture, but defender connection leaves 3 liberties so KataGo does not take the shortcut",
     "size": 9,
     "stones": [
       [
@@ -96,8 +96,7 @@
     ],
     "attacker": "black",
     "firstPlayer": "attacker",
-    "expected": "captured",
-    "expectedNodes": 1
+    "expected": "escaped"
   },
   {
     "id": "defender-sole-response-upper-bound-capture",
