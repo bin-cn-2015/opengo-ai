@@ -64,6 +64,7 @@ export default function App() {
   }
 
   function play(row: number, col: number) {
+    if (reviewStates) return;
     if (finished) { setGame(toggleDeadGroup(game, row, col)); return; }
     const next = applyAction(game, { type: "play", row, col });
     if (next) {
