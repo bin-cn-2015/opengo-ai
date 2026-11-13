@@ -59,7 +59,12 @@ positions (seed `20261113`) with target chains in one to three liberties.
 It stratifies target locations evenly across corner bands, edge bands, and
 interior points (32 cases per region), and alternates the side to move evenly
 (48 attacker-first and 48 defender-first). Each fixture records its region,
-root target-chain size, and root liberty count. The generator rejects
+root target-chain size, root liberty count, and observable tactical motif
+labels: target in atari, target with two or three liberties, multi-stone target,
+near-edge/corner target, and adjacent attacker chain in atari when present.
+These labels describe board structure for coverage accounting; they are not
+claims that the position is a canonical snapback, ladder escape, or ko
+problem. The generator rejects
 positions containing any zero-liberty setup group, labels accepted positions
 by calling the pinned official C++ adapter, and writes both
 `tests/katago-ladder/generated-cases.json` and the TypeScript test-data
