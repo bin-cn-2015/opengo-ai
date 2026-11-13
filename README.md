@@ -37,6 +37,10 @@ npm run build
 
 The initial scaffold keeps the first playable UI at the repository root while these packages are introduced incrementally.
 
+## KataGo browser runtime
+
+The P0 feasibility decision, model-format findings, runtime comparison, and verification checklist are tracked in [KATAGO_BROWSER_RUNTIME.md](./KATAGO_BROWSER_RUNTIME.md). KataGo model loading and browser inference remain unimplemented until the documented parity checks pass.
+
 ## Model compatibility
 
 KataGo native model files are not interchangeable with ONNX models. Before selecting a browser runtime, we must verify the exact model format, network operations, feature schema, and backend operator coverage. Backend support will be claimed only after correctness and performance tests.
