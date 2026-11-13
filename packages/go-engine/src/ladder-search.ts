@@ -84,6 +84,9 @@ export function searchLadder(
   if (!targetPoints.some(([r, c]) => board[r][c] === targetColor)) {
     throw new RangeError("targetStones must include at least one surviving opponent stone.");
   }
+  // Only stones present at the root are tracked. A missing point later
+  // means that its target fragment was captured during this search.
+  const trackedTargetPoints = targetPoints.filter(([r, c]) => board[r][c] === targetColor);
   const memo = new Map<string, NodeResult>();
   let nodes = 0;
   let cutoff: LadderSearchResult["reason"] | null = null;
@@ -91,7 +94,7 @@ export function searchLadder(
   const findTargetGroups = (position: Board): { stones: [number, number][]; liberties: Set<string> }[] => {
     const visited = new Set<string>();
     const groups: { stones: [number, number][]; liberties: Set<string> }[] = [];
-    for (const [r, c] of targetPoints) {
+    for (const [r, c] of trackedTargetPoints) {
       const point = r + "," + c;
       if (position[r]?.[c] !== targetColor || visited.has(point)) continue;
       const group = getGroup(position, r, c);
@@ -107,10 +110,19 @@ export function searchLadder(
       cutoff = "node-limit";
       return { status: "unknown", pv: [], reason: "node-limit" };
     }
+    // This reader asks whether any fragment of the original target can be
+    // forced into capture. Once a fragment is captured, the existential
+    // target is captured even if another fragment survives elsewhere.
+    if (trackedTargetPoints.some(([r, c]) => position[r]?.[c] !== targetColor)) {
+      return { status: "captured", pv: [], reason: "captured" };
+    }
     const groups = findTargetGroups(position);
     if (groups.length === 0) return { status: "captured", pv: [], reason: "captured" };
-    if (groups.some(group => group.liberties.size > 2)) return { status: "escaped", pv: [], reason: "escaped" };
-    if (groups.some(group => group.liberties.size === 0)) return { status: "captured", pv: [], reason: "captured" };
+    // A fragment with more than two liberties is not currently ladderable,
+    // but it must not make a separate, still-threatened fragment escape.
+    const threatenedGroups = groups.filter(group => group.liberties.size <= 2);
+    if (threatenedGroups.length === 0) return { status: "escaped", pv: [], reason: "escaped" };
+    if (threatenedGroups.some(group => group.liberties.size === 0)) return { status: "captured", pv: [], reason: "captured" };
     if (depth >= maxDepth) {
       cutoff = "depth-limit";
       return { status: "unknown", pv: [], reason: "depth-limit" };
@@ -126,11 +138,11 @@ export function searchLadder(
     const cached = options.isLegalMove ? undefined : memo.get(key);
     if (cached) return cached;
 
-    const candidates = new Set<string>(groups.flatMap(group => [...group.liberties]));
+    const candidates = new Set<string>(threatenedGroups.flatMap(group => [...group.liberties]));
     // A defender may also capture an adjacent attacking chain in atari. Its
-    // sole liberty is necessarily adjacent to the target group in ladder shape.
+    // sole liberty is necessarily adjacent to a threatened target fragment.
     if (toMove === targetColor) {
-      for (const [r, c] of groups.flatMap(group => group.stones)) {
+      for (const [r, c] of threatenedGroups.flatMap(group => group.stones)) {
         for (const [nr, nc] of adjacentPoints(r, c, position.length)) {
           if (position[nr][nc] !== attacker) continue;
           const adjacentGroup = getGroup(position, nr, nc);
