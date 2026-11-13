@@ -60,17 +60,18 @@ describe("ladder search", () => {
 
 
 
-  it("treats a root position already present in supplied game history as unresolved repetition", () => {
+  it("allows the current root position to appear in supplied game history", () => {
     const board = createBoard(9);
     board[4][4] = "white";
     board[3][4] = "black";
     board[4][3] = "black";
     board[5][4] = "black";
     const result = searchLadder(board, 4, 4, "black", {
+      // GameState.history normally includes the current board as its last entry.
       initialPath: [boardKey(board) + "|black"],
     });
-    expect(result.status).toBe("unknown");
-    expect(result.reason).toBe("ko-or-no-legal-move");
+    expect(result.status).toBe("captured");
+    expect(result.principalVariation[0]).toEqual({ row: 4, col: 5, color: "black" });
   });
 
   it("keeps reading a threatened fragment when another target fragment has more than two liberties", () => {
