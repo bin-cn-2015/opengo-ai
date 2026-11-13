@@ -46,5 +46,5 @@ export type {
   V7TaxRule,
 } from "./feature-encoder-v7";
 
-export { deriveV7RuleFeatures } from "./v7-rule-features";
+export { deriveV7RuleFeatures, encodeKataGoV7WithDerivedRules } from "./v7-rule-features";
 export type { V7DerivedRuleFeatures, V7RuleFeatureOptions } from "./v7-rule-features";
