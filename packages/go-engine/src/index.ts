@@ -155,6 +155,24 @@ export function applyAction(state: GameState, action: GameAction): GameState | n
   };
 }
 
+/**
+ * Enumerate every legal stone play and pass for the current player.
+ * This is intentionally rule-engine-only; MCTS can consume this list without
+ * duplicating ko, suicide, capture, or game-over checks.
+ */
+export function getLegalActions(state: GameState): GameAction[] {
+  if (isGameOver(state)) return [];
+  const actions: GameAction[] = [];
+  for (let row = 0; row < state.board.length; row++) {
+    for (let col = 0; col < state.board.length; col++) {
+      const action: GameAction = { type: "play", row, col };
+      if (applyAction(state, action)) actions.push(action);
+    }
+  }
+  actions.push({ type: "pass" });
+  return actions;
+}
+
 export function isGameOver(state: GameState): boolean {
   return state.consecutivePasses >= 2;
 }
