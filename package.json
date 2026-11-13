@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run --environment node",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "onnx:inspect": "python scripts/inspect_katago_onnx.py"
   },
   "dependencies": {
     "react": "^19.0.0",
