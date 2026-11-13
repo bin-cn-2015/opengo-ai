@@ -160,7 +160,10 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
       "katago.postProcess.varianceTimeMultiplier",
       "katago.postProcess.shorttermValueErrorMultiplier",
       "katago.postProcess.shorttermScoreErrorMultiplier",
-    ]) {\n      const value = Number(required(metadata, key));\n      if (!Number.isFinite(value)) throw new ModelMetadataError(`Metadata ${key} must be a finite number.`);\n    }
+    ]) {
+      const value = Number(required(metadata, key));
+      if (!Number.isFinite(value)) throw new ModelMetadataError(`Metadata ${key} must be a finite number.`);
+    }
   }
 
   return {
@@ -179,7 +182,9 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
     nnYLen,
     requireExactNNLen: booleanValue(metadata, "katago.build.requireExactNNLen", false),
     hasTransformerBlocks: booleanValue(metadata, "katago.info.arch.hasAnyTransformerBlocks", false),
-    hasNestedBottleneckBlocks: metadata["katago.info.arch.hasAnyNestedBottleneckBlocks"] === undefined\n      ? undefined\n      : booleanValue(metadata, "katago.info.arch.hasAnyNestedBottleneckBlocks", false),
+    hasNestedBottleneckBlocks: metadata["katago.info.arch.hasAnyNestedBottleneckBlocks"] === undefined
+      ? undefined
+      : booleanValue(metadata, "katago.info.arch.hasAnyNestedBottleneckBlocks", false),
     sourceSha256: metadata["katago.info.sourceSha256"],
   };
 }
