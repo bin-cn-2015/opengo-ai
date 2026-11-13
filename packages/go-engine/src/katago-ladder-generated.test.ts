@@ -21,6 +21,25 @@ describe("generated KataGo C++ ladder differential corpus", () => {
     expect(generatedLadderCases.filter(fixture => fixture.firstPlayer === "defender")).toHaveLength(48);
   });
 
+  it("contains distinct local tactical motifs in the oracle-labeled corpus", () => {
+    if (generatedLadderCases.length === 0) return;
+    const countFeature = (feature: string) =>
+      generatedLadderCases.filter(fixture => fixture.tacticalFeatures.includes(feature)).length;
+    expect(countFeature("target-in-atari")).toBeGreaterThan(0);
+    expect(countFeature("target-two-liberties")).toBeGreaterThan(0);
+    expect(countFeature("target-three-liberties")).toBeGreaterThan(0);
+    expect(countFeature("multi-stone-target")).toBeGreaterThan(0);
+    expect(countFeature("edge-band-target")).toBe(64);
+    expect(countFeature("corner-band-target")).toBe(32);
+    console.info("KataGo tactical motif coverage", {
+      atari: countFeature("target-in-atari"),
+      twoLiberties: countFeature("target-two-liberties"),
+      threeLiberties: countFeature("target-three-liberties"),
+      multiStone: countFeature("multi-stone-target"),
+      adjacentAttackerAtari: countFeature("adjacent-attacker-in-atari"),
+    });
+  });
+
   it.each(generatedLadderCases)("$id (root liberties: $targetLibertiesAtRoot)", (fixture) => {
     const board = createBoard(fixture.size);
     for (const [color, row, col] of fixture.stones) {
