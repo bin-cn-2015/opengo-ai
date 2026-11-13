@@ -41,7 +41,7 @@ jobs:
       - name: Compare curated ladder corpus against official KataGo
         run: python3 scripts/compare_katago_ladder_oracle.py --oracle ./build/katago-ladder-oracle/katago-ladder-oracle
       - name: Generate deterministic ladder positions using official oracle
-        run: python3 scripts/generate_katago_ladder_corpus.py --oracle ./build/katago-ladder-oracle/katago-ladder-oracle --count 48 --seed 20261113
+        run: python3 scripts/generate_katago_ladder_corpus.py --oracle ./build/katago-ladder-oracle/katago-ladder-oracle --count 96 --seed 20261113
       - name: Verify generated corpus against official oracle
         run: python3 scripts/compare_katago_ladder_oracle.py --fixtures tests/katago-ladder/generated-cases.json --oracle ./build/katago-ladder-oracle/katago-ladder-oracle
       - name: Differentially exercise generated positions in TypeScript
