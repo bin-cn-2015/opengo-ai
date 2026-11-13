@@ -83,7 +83,7 @@ describe("encodeKataGoV7", () => {
     expect(encoded.mask[0]).toBe(1);
     expect(encoded.mask[2]).toBe(1);
     expect(encoded.mask[3]).toBe(0);
-    expect(encoded.mask[10]).toBe(0);
+    expect(encoded.mask[15]).toBe(0);
   });
 
   it("encodes player-relative stones and exact 1/2/3-liberty buckets", () => {
