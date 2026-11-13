@@ -51,8 +51,6 @@ export interface KataGoV7Position {
   koRecapBlocked: Uint8Array;
   encorePhase: number;
   rules: V7Rules;
-  /** Komi signed from nextPlayer's perspective. If omitted, derived from white-positive komi. */
-  komi: number;
   /** True if a pass would end the current phase under the active rules/history. */
   passWouldEndPhase: boolean;
   /** True when KataGo's pass handling requires move history to be hidden. */
