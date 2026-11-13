@@ -20,6 +20,10 @@ export interface GameState {
   history: string[];
   /** Board position that the next player may not recreate under simple ko. */
   simpleKoPosition: string | null;
+  scoringRule: ScoringRule;
+  komi: number;
+  /** Negotiated dead-stone coordinates, encoded as "row,col". */
+  deadStones: string[];
 }
 
 export type GameAction =
@@ -111,7 +115,10 @@ export function createGame(size = 19, koRule: KoRule = "situational"): GameState
     consecutivePasses: 0,
     koRule,
     history: [initialKey],
-    simpleKoPosition: null
+    simpleKoPosition: null,
+    scoringRule: "area",
+    komi: 7.5,
+    deadStones: []
   };
 }
 
