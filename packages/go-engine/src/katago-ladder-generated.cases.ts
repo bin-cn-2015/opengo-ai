@@ -7,6 +7,8 @@ export interface GeneratedLadderCase {
   attacker: "black" | "white";
   firstPlayer: "attacker" | "defender";
   expected: "captured" | "escaped";
+  targetRegion: "corner-band" | "edge-band" | "interior";
   targetLibertiesAtRoot: number;
+  targetStonesAtRoot: number;
 }
 export const generatedLadderCases: GeneratedLadderCase[] = [];
