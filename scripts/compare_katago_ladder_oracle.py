@@ -58,7 +58,7 @@ def main() -> int:
             if response.get("id") != case_id:
                 raise RuntimeError(f"response id {response.get('id')!r} does not match")
             if actual != expected:
-                raise RuntimeError(f"status mismatch: expected {expected}, got {actual}")
+                raise RuntimeError(f"status mismatch: expected {expected}, got {actual}; response={response!r}")
             print(f"PASS {case_id}: {actual}")
         except (KeyError, json.JSONDecodeError, subprocess.TimeoutExpired,
                 OSError, RuntimeError) as exc:
