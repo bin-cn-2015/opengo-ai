@@ -274,11 +274,11 @@ describe("ladder search", () => {
     expect(result.reason).toBe("ko-or-no-legal-move");
   });
 
-  it("applies KataGo's double-ko-death shortcut when both liberties are ko mouths", () => {
+  it("rejects the double-ko shortcut when a defender connection gains three liberties", () => {
     const board = createBoard(9);
-    // The target at (4,4) has two separated liberties. Each liberty is
-    // surrounded by white stones and has one adjacent single-stone white
-    // chain in atari; filling either point captures that one-stone chain.
+    // Both target liberties are ko mouths, but the adjacent white chains
+    // connected by a defender move give the resulting group three liberties.
+    // KataGo therefore does not apply its double-ko-death shortcut.
     board[4][4] = "white";
     for (const [r, c] of [
       [2, 4], [3, 3], [3, 5], [5, 3], [5, 5], [6, 4],
@@ -288,9 +288,8 @@ describe("ladder search", () => {
     ] as const) board[r][c] = "black";
 
     const result = searchLadder(board, 4, 4, "black");
-    expect(result.status).toBe("captured");
-    expect(result.reason).toBe("captured");
-    expect(result.nodes).toBe(1);
+    expect(result.status).toBe("unknown");
+    expect(result.reason).toBe("node-limit");
   });
 
   it("does not apply the double-ko shortcut when only one liberty is a ko mouth", () => {
