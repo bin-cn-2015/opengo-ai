@@ -64,7 +64,12 @@ labels: target in atari, target with two or three liberties, multi-stone target,
 near-edge/corner target, and adjacent attacker chain in atari when present.
 These labels describe board structure for coverage accounting; they are not
 claims that the position is a canonical snapback, ladder escape, or ko
-problem. The generator rejects
+problem. The generated TypeScript test enforces minimum counts for atari
+targets, two-/three-liberty targets, multi-stone targets, and adjacent
+attacker-atari chains so a future seed or generator change cannot silently
+erase those motifs. For seed `20261113`, the observed counts are 8 atari
+targets, 30 two-liberty targets, 58 three-liberty targets, 20 multi-stone
+targets, and 18 adjacent attacker-atari motifs. The generator rejects
 positions containing any zero-liberty setup group, labels accepted positions
 by calling the pinned official C++ adapter, and writes both
 `tests/katago-ladder/generated-cases.json` and the TypeScript test-data
