@@ -15,8 +15,10 @@ export interface GameState {
   moveNumber: number;
   consecutivePasses: number;
   koRule: KoRule;
-  /** Position keys already reached; pass moves are exempt from superko repetition checks. */
+  /** Positions reached by stone plays. Passes are exempt from superko checks. */
   history: string[];
+  /** Board position that the next player may not recreate under simple ko. */
+  simpleKoPosition: string | null;
 }
 
 export type GameAction =
@@ -68,7 +70,7 @@ export function getGroup(board: Board, row: number, col: number): { stones: [num
   return { stones, liberties };
 }
 
-export function playMove(board: Board, row: number, col: number, color: Stone, previousBoard?: Board): MoveResult | null {
+export function playMove(board: Board, row: number, col: number, color: Stone): MoveResult | null {
   const size = board.length;
   if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= size || col >= size || board[row]?.[col] !== null) return null;
 
@@ -88,7 +90,6 @@ export function playMove(board: Board, row: number, col: number, color: Stone, p
   }
 
   if (getGroup(next, row, col).liberties.size === 0) return null;
-  if (previousBoard && boardsEqual(next, previousBoard)) return null;
   return { board: next, captured };
 }
 
@@ -108,7 +109,8 @@ export function createGame(size = 19, koRule: KoRule = "situational"): GameState
     moveNumber: 0,
     consecutivePasses: 0,
     koRule,
-    history: [initialKey]
+    history: [initialKey],
+    simpleKoPosition: null
   };
 }
 
@@ -118,24 +120,26 @@ function positionKey(board: Board, nextPlayer: Stone, rule: KoRule): string {
 }
 
 export function applyAction(state: GameState, action: GameAction): GameState | null {
-  if (state.consecutivePasses >= 2) return null;
+  if (isGameOver(state)) return null;
 
   if (action.type === "pass") {
     return {
       ...state,
       toMove: otherColor(state.toMove),
       moveNumber: state.moveNumber + 1,
-      consecutivePasses: state.consecutivePasses + 1
+      consecutivePasses: state.consecutivePasses + 1,
+      // A pass breaks the immediate-recapture condition for simple ko.
+      simpleKoPosition: null
     };
   }
 
-  const previousBoard = state.koRule === "simple" && state.history.length >= 2
-    ? boardFromKey(state.history[state.history.length - 2], state.board.length)
-    : undefined;
-  const result = playMove(state.board, action.row, action.col, state.toMove, previousBoard);
+  const result = playMove(state.board, action.row, action.col, state.toMove);
   if (!result) return null;
 
   const nextPlayer = otherColor(state.toMove);
+  const boardPosition = boardKey(result.board);
+  if (state.koRule === "simple" && boardPosition === state.simpleKoPosition) return null;
+
   const key = positionKey(result.board, nextPlayer, state.koRule);
   if (state.koRule !== "simple" && state.history.includes(key)) return null;
 
@@ -146,14 +150,9 @@ export function applyAction(state: GameState, action: GameAction): GameState | n
     captures: { ...state.captures, [state.toMove]: state.captures[state.toMove] + result.captured },
     moveNumber: state.moveNumber + 1,
     consecutivePasses: 0,
-    history: [...state.history, key]
+    history: [...state.history, key],
+    simpleKoPosition: boardKey(state.board)
   };
-}
-
-function boardFromKey(key: string, size: number): Board {
-  const rows = key.split("/");
-  if (rows.length !== size) return createBoard(size);
-  return rows.map((row) => [...row].map((cell) => cell === "b" ? "black" : cell === "w" ? "white" : null));
 }
 
 export function isGameOver(state: GameState): boolean {
