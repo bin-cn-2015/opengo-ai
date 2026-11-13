@@ -48,6 +48,7 @@ const referenceCases: readonly ReferenceCase[] = [
     attacker: "black",
     firstPlayer: "defender",
     expected: "captured",
+    expectedNodes: 3,
   },
   {
     id: "defender-connection-lower-bound",
