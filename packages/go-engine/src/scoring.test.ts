@@ -12,8 +12,8 @@ describe("territory and scoring", () => {
     const board = Array.from({ length: 9 }, () => Array(9).fill(null));
     board[0][0] = "black"; board[0][1] = "black"; board[1][0] = "black";
     const map = getTerritory(board);
-    expect(map.black).toBe(3);
-    expect(map.neutral).toBe(78);
+    expect(map.black).toBe(78);
+    expect(map.neutral).toBe(0);
   });
 
   it("keeps regions touching both colors neutral", () => {
