@@ -1,5 +1,6 @@
 import {
   findLadderedStones,
+  findLadderEscapePoints,
   calculatePassAliveArea,
   type Board,
   type Stone,
@@ -8,8 +9,8 @@ import { encodeKataGoV7, type EncodedKataGoV7Inputs, type KataGoV7Position, type
 import type { KataGoOnnxMetadata } from "./model-metadata";
 
 export interface V7RuleFeatureOptions {
-  /** Exact KataGo-compatible iterLadders escape-point plane. Never guessed. */
-  opponentEscape: Uint8Array;
+  /** Optional precomputed escape-point plane; otherwise derived by the TS ladder reader. */
+  opponentEscape?: Uint8Array;
   maxLadderNodes?: number;
   maxLadderDepth?: number;
 }
@@ -57,10 +58,10 @@ function encodeAreaOwners(board: Board, nextPlayer: Stone): Uint8Array {
  * Derive current and two historical ladder planes plus current pass-alive
  * area. recentBoards must be [current, one-ply-old, two-ply-old].
  *
- * The opponentEscape plane is required from a KataGo-compatible iterLadders
- * implementation. The current TS ladder reader does not yet produce that
- * exact escape-point output, so this adapter refuses to invent an all-zero
- * plane and misrepresent it as complete V7 feature parity.
+ * The opponentEscape plane is computed by the TypeScript ladder reader using
+ * KataGo iterLadders semantics: for each opponent chain with two liberties,
+ * test each attacking liberty and retain those that lead to a proven
+ * defender-first ladder capture. Callers may supply a precomputed plane.
  */
 export function deriveV7RuleFeatures(
   position: Pick<KataGoV7Position, "width" | "height" | "board" | "nextPlayer" | "recentBoards">,
@@ -71,8 +72,8 @@ export function deriveV7RuleFeatures(
     throw new RangeError("V7 Go rule features require a square board of dimensions >= 2.");
   }
   const area = width * height;
-  if (options.opponentEscape.length !== area ||
-      options.opponentEscape.some(value => value !== 0 && value !== 1)) {
+  if (options.opponentEscape && (options.opponentEscape.length !== area ||
+      options.opponentEscape.some(value => value !== 0 && value !== 1))) {
     throw new RangeError("opponentEscape must be a board-sized binary mask.");
   }
   const boards = position.recentBoards.map(snapshot => decodeBoard(snapshot, width, height));
@@ -84,17 +85,21 @@ export function deriveV7RuleFeatures(
   const currentPlayer: Stone = position.nextPlayer === "B" ? "black" : "white";
   const previousPlayer: Stone = currentPlayer === "black" ? "white" : "black";
   const attackers: Stone[] = [currentPlayer, previousPlayer, currentPlayer];
-  const masks = boards.map((board, index) => findLadderedStones(board, attackers[index], {
+  const ladderOptions = {
     maxNodes: options.maxLadderNodes,
     maxDepth: options.maxLadderDepth,
-  }));
+  };
+  const masks = boards.map((board, index) => findLadderedStones(board, attackers[index], ladderOptions));
+  const opponentEscape = options.opponentEscape
+    ? new Uint8Array(options.opponentEscape)
+    : findLadderEscapePoints(current, previousPlayer, ladderOptions);
 
   return {
     ladderMasks: {
       current: masks[0],
       previous: masks[1],
       previousPrevious: masks[2],
-      opponentEscape: new Uint8Array(options.opponentEscape),
+      opponentEscape,
     },
     areaOwners: encodeAreaOwners(current, currentPlayer),
   };
