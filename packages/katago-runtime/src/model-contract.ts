@@ -30,7 +30,10 @@ export function validateKataGoGraphNames(
     "InputMask",
   ];
 
-  assertExactNames("input", expectedInputs, graph.inputNames);\n  if (expectedInputs.some((name, index) => graph.inputNames[index] !== name)) {\n    throw new ModelMetadataError("KataGo ONNX graph inputs must be ordered InputSpatial, InputGlobal, InputMeta (when present), InputMask.");\n  }
+  assertExactNames("input", expectedInputs, graph.inputNames);
+  if (expectedInputs.some((name, index) => graph.inputNames[index] !== name)) {
+    throw new ModelMetadataError("KataGo ONNX graph inputs must be ordered InputSpatial, InputGlobal, InputMeta (when present), InputMask.");
+  }
   assertExactNames("output", REQUIRED_OUTPUTS, graph.outputNames);
 }
 
