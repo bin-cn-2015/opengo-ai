@@ -43,7 +43,7 @@ export function parseSgf(source: string): SgfCollection {
       const name = match[0]; i += name.length;
       whitespace();
       const values: string[] = [];
-      while (source[i] === "[") { values.push(parseValue(source, { get i(){return i;}, set i(v){i=v;} })); whitespace(); }
+      while (source[i] === "[") { values.push(parseValue(source, { get i(){return i;}, set i(v: number){i=v;} })); whitespace(); }
       if (!values.length) throw new SyntaxError(`Property ${name} has no value.`);
       properties[name] = [...(properties[name] ?? []), ...values];
     }
