@@ -64,6 +64,26 @@ describe("parseKataGoOnnxMetadata", () => {
     expect(() => assertTargetTransformerV17(parsed)).toThrow(/not identified/);
   });
 
+  it("requires the exact-board-buffer metadata and consistent meta encoder channels", () => {
+    const withoutExact = { ...baseMetadata };
+    delete withoutExact["katago.build.requireExactNNLen"];
+    expect(() => parseKataGoOnnxMetadata(withoutExact)).toThrow(/katago.build.requireExactNNLen/);
+
+    expect(() => parseKataGoOnnxMetadata({
+      ...baseMetadata,
+      "katago.metaEncoderVersion": "1",
+      "katago.numInputMetaChannels": "0",
+    })).toThrow(/disagree about the InputMeta tensor/);
+  });
+
+  it("requires the v17 target model family name", () => {
+    const parsed = parseKataGoOnnxMetadata({
+      ...baseMetadata,
+      "katago.name": "some-other-model",
+    });
+    expect(() => assertTargetTransformerV17(parsed)).toThrow(/tf3-b11c768/);
+  });
+
   it("rejects malformed booleans and unsupported contract versions", () => {
     expect(() => parseKataGoOnnxMetadata({
       ...baseMetadata,
