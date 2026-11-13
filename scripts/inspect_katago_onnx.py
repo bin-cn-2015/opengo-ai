@@ -59,11 +59,9 @@ def main():
     }
 
     if args.report:
-        args.report.write_text(json.dumps(report, indent=2) + "
-", encoding="utf-8")
+        args.report.write_text(json.dumps(report, indent=2) + chr(10), encoding="utf-8")
     if args.metadata:
-        args.metadata.write_text(json.dumps(metadata, indent=2) + "
-", encoding="utf-8")
+        args.metadata.write_text(json.dumps(metadata, indent=2) + chr(10), encoding="utf-8")
 
     print(json.dumps(report, indent=2))
 
