@@ -175,24 +175,26 @@ describe("ladder search", () => {
     expect(result.principalVariation[0]).toEqual({ row: 4, col: 5, color: "white" });
   });
 
-  it("finds a snapback-style countercapture of an adjacent attacking stone in atari", () => {
-    // The black stone at (4,5) is the just-played attack. White can capture
-    // it at (5,5), reopening a third liberty for the original target stone.
+  it("does not search countercaptures after the defender has already escaped with three liberties", () => {
     const board = createBoard(9);
     board[4][4] = "white";
     board[4][5] = "black";
     board[3][5] = "white";
     board[4][6] = "white";
+    let hookCalls = 0;
 
     const result = searchLadder(board, 4, 4, "black", {
       firstPlayer: "defender",
       targetStones: [[4, 4]],
-      isLegalMove: (_position, row, col, color) =>
-        color === "white" && row === 5 && col === 5,
+      isLegalMove: () => {
+        hookCalls += 1;
+        return true;
+      },
     });
 
     expect(result.status).toBe("escaped");
-    expect(result.principalVariation[0]).toEqual({ row: 5, col: 5, color: "white" });
+    expect(result.principalVariation).toEqual([]);
+    expect(hookCalls).toBe(0);
   });
 
   it("does not claim capture when the defender has no local candidate accepted by the legality hook", () => {
@@ -200,6 +202,7 @@ describe("ladder search", () => {
     board[4][4] = "white";
     board[3][4] = "black";
     board[4][3] = "black";
+    board[5][4] = "black";
     let checked = 0;
     const result = searchLadder(board, 4, 4, "black", {
       firstPlayer: "defender",
