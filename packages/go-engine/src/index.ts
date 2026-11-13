@@ -254,10 +254,15 @@ export function getTerritory(board: Board, deadStones: readonly string[] = []): 
       const queue: [number, number][] = [[row, col]];
       const region: [number, number][] = [];
       const bordering = new Set<Stone>();
+      const touchedEdges = new Set<string>();
       visited.add(`${row},${col}`);
       while (queue.length) {
         const [r, c] = queue.pop()!;
         region.push([r, c]);
+        if (r === 0) touchedEdges.add("top");
+        if (r === size - 1) touchedEdges.add("bottom");
+        if (c === 0) touchedEdges.add("left");
+        if (c === size - 1) touchedEdges.add("right");
         for (const [nr, nc] of neighbors(r, c, size)) {
           const key = `${nr},${nc}`;
           const cell = effective[nr][nc];
@@ -268,7 +273,10 @@ export function getTerritory(board: Board, deadStones: readonly string[] = []): 
           }
         }
       }
-      const owner = bordering.size === 1 ? [...bordering][0] : null;
+      // A region spanning three or four board edges is open board space, not territory.
+      // This avoids awarding the whole empty board to a lone stone or a small wall.
+      const openToBoard = touchedEdges.size >= 3;
+      const owner = bordering.size === 1 && !openToBoard ? [...bordering][0] : null;
       if (owner === "black") black += region.length;
       else if (owner === "white") white += region.length;
       else neutral += region.length;
