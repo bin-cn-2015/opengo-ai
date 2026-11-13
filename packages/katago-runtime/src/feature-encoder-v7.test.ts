@@ -116,7 +116,7 @@ describe("encodeKataGoV7", () => {
     expect(encoded.spatial[at(9, 3, 3)]).toBe(1);
     expect(encoded.global[0]).toBe(0);
     expect(encoded.spatial[at(10, 0, 0)]).toBe(0);
-    // The third most recent move is black's pass.
+    // The second most recent move is black's pass.
     expect(encoded.global[1]).toBe(1);
     expect(encoded.spatial[at(11, 1, 0)]).toBe(1);
     expect(encoded.spatial[at(12, 0, 0)]).toBe(1);
