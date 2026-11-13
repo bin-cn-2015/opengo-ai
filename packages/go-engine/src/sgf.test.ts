@@ -3,7 +3,7 @@ import { parseSgf, replaySgf, serializeSgf } from "./sgf";
 
 describe("SGF import, export and replay", () => {
   it("replays a main line on 9x9 and supports pass moves", () => {
-    const replay = replaySgf(parseSgf("(;GM[1]FF[4]SZ[9]KM[6.5];B[aa];W[];B[bc])").games[0]);
+    const replay = replaySgf(parseSgf("(;GM[1]FF[4]SZ[9]KM[6.5];B[aa];W[];B[cb])").games[0]);
     expect(replay.states).toHaveLength(4);
     expect(replay.states[1].board[0][0]).toBe("black");
     expect(replay.states[2].consecutivePasses).toBe(1);
