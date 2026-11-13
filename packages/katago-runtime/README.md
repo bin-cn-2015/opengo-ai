@@ -31,6 +31,6 @@ The first supported import path is an ONNX export generated offline with the off
 - `webgpu`: preferred GPU backend where the browser and model graph support it.
 - `webgl`: retained as a required target, subject to its narrower operator coverage and maintenance status in ONNX Runtime Web.
 
-Before enabling inference on either GPU backend, audit every operator in the exported current Transformer graph and test the complete graph. A backend must not be reported as supported merely because the runtime can create a session.
+The adapter selects one provider explicitly, but ONNX Runtime may partition unsupported nodes to its CPU provider. Therefore a successful session is not proof of full GPU execution. Before claiming WebGPU or WebGL support, audit every operator in the exact exported Transformer graph and verify provider placement plus numerical parity. The current package does not yet claim that GPU audit has passed.
 
 See [KataGo browser runtime plan](../../KATAGO_BROWSER_RUNTIME.md).
