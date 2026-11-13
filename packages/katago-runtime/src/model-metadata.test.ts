@@ -91,7 +91,15 @@ describe("validateKataGoGraphNames", () => {
     })).not.toThrow();
   });
 
-  it("rejects input ordering that violates the KataGo binding contract", () => {\n    const parsed = parseKataGoOnnxMetadata(baseMetadata);\n    expect(() => validateKataGoGraphNames(parsed, {\n      inputNames: ["InputSpatial", "InputMask", "InputGlobal"],\n      outputNames: ["OutputPolicyPass", "OutputPolicy", "OutputValue", "OutputScoreValue", "OutputOwnership"],\n    })).toThrow(/must be ordered/);\n  });\n\n  it("requires InputMeta only for metadata-encoder models", () => {
+  it("rejects input ordering that violates the KataGo binding contract", () => {
+    const parsed = parseKataGoOnnxMetadata(baseMetadata);
+    expect(() => validateKataGoGraphNames(parsed, {
+      inputNames: ["InputSpatial", "InputMask", "InputGlobal"],
+      outputNames: ["OutputPolicyPass", "OutputPolicy", "OutputValue", "OutputScoreValue", "OutputOwnership"],
+    })).toThrow(/must be ordered/);
+  });
+
+  it("requires InputMeta only for metadata-encoder models", () => {
     const metadata = parseKataGoOnnxMetadata({
       ...baseMetadata,
       "katago.metaEncoderVersion": "1",
