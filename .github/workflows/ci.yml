@@ -19,3 +19,19 @@ jobs:
       - run: npm test
       - run: python3 scripts/test_katago_ladder_oracle_runner.py
       - run: npm run build
+
+  katago-ladder-oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: lightvector/KataGo
+          ref: d91ea855110dae533f0aada947b2b7d78cc8a4e1
+          path: third_party/katago
+      - name: Configure test-only official-source adapter
+        run: cmake -S tests/katago-ladder/cpp-oracle -B build/katago-ladder-oracle -DKATAGO_CPP_DIR="${{ github.workspace }}/third_party/katago/cpp"
+      - name: Build test-only official-source adapter
+        run: cmake --build build/katago-ladder-oracle --target katago-ladder-oracle --parallel 2
+      - name: Compare ladder corpus against official KataGo
+        run: python3 scripts/compare_katago_ladder_oracle.py --oracle ./build/katago-ladder-oracle/katago-ladder-oracle
