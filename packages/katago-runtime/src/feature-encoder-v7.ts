@@ -91,20 +91,20 @@ const KOMI_CLIP_RADIUS = 20;
 
 function assertBinaryMask(name: string, mask: Uint8Array, length: number): void {
   if (mask.length !== length) {
-    throw new RangeError(\`\${name} must contain \${length} board entries; got \${mask.length}.\`);
+    throw new RangeError(`${name} must contain ${length} board entries; got ${mask.length}.`);
   }
   for (let i = 0; i < mask.length; i += 1) {
     if (mask[i] !== 0 && mask[i] !== 1) {
-      throw new RangeError(\`\${name} must contain only 0 or 1; invalid value at index \${i}.\`);
+      throw new RangeError(`${name} must contain only 0 or 1; invalid value at index ${i}.`);
     }
   }
 }
 
 function assertBoard(name: string, board: Uint8Array, length: number): void {
-  if (board.length !== length) throw new RangeError(\`\${name} must contain \${length} board entries.\`);
+  if (board.length !== length) throw new RangeError(`${name} must contain ${length} board entries.`);
   for (let i = 0; i < board.length; i += 1) {
     if (board[i] !== 0 && board[i] !== 1 && board[i] !== 2) {
-      throw new RangeError(\`\${name} contains an invalid stone value at index \${i}.\`);
+      throw new RangeError(`${name} contains an invalid stone value at index ${i}.`);
     }
   }
 }
@@ -183,12 +183,12 @@ export function encodeKataGoV7(
   metadata: KataGoOnnxMetadata,
 ): EncodedKataGoV7Inputs {
   if (metadata.modelVersion < 16) {
-    throw new Error(\`KataGo V7 input encoding requires modelVersion >= 16; got \${metadata.modelVersion}.\`);
+    throw new Error(`KataGo V7 input encoding requires modelVersion >= 16; got ${metadata.modelVersion}.`);
   }
   if (metadata.numInputChannels !== SPATIAL_CHANNELS_V7 ||
       metadata.numInputGlobalChannels !== GLOBAL_CHANNELS_V7) {
     throw new Error(
-      \`Model metadata is not a V7 22/19 input model (got \${metadata.numInputChannels}/\${metadata.numInputGlobalChannels}).\`,
+      `Model metadata is not a V7 22/19 input model (got ${metadata.numInputChannels}/${metadata.numInputGlobalChannels}).`,
     );
   }
 
@@ -210,7 +210,7 @@ export function encodeKataGoV7(
     throw new Error("recentBoards[0] must be the current board.");
   }
   for (const [index, snapshot] of position.recentBoards.entries()) {
-    assertBoard(\`recentBoards[\${index}]\`, snapshot, boardArea);
+    assertBoard(`recentBoards[${index}]`, snapshot, boardArea);
   }
   assertBinaryMask("superKoBanned", position.superKoBanned, boardArea);
   assertBinaryMask("koRecapBlocked", position.koRecapBlocked, boardArea);
@@ -326,7 +326,7 @@ export function encodeKataGoV7(
       if (move.x === null || move.y === null ||
           !Number.isInteger(move.x) || !Number.isInteger(move.y) ||
           move.x < 0 || move.y < 0 || move.x >= width || move.y >= height) {
-        throw new RangeError(\`Invalid historical move at reverse index \${i}.\`);
+        throw new RangeError(`Invalid historical move at reverse index ${i}.`);
       }
       set(spatialHistoryChannel[i], move.y * width + move.x);
     }
@@ -387,7 +387,7 @@ export function encodeKataGoV7(
   if (metadata.metaEncoderVersion > 0) {
     if (!position.meta) throw new Error("This model requires SGF metadata features in InputMeta.");
     if (position.meta.length !== metadata.numInputMetaChannels) {
-      throw new RangeError(\`InputMeta must contain \${metadata.numInputMetaChannels} values.\`);
+      throw new RangeError(`InputMeta must contain ${metadata.numInputMetaChannels} values.`);
     }
   } else if (position.meta) {
     throw new Error("InputMeta was supplied for a model that does not have a metadata encoder.");
