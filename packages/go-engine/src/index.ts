@@ -46,7 +46,7 @@ export function boardKey(board: Board): string {
 }
 
 function neighbors(row: number, col: number, size: number): [number, number][] {
-  return [[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]]
+  return ([[row - 1, col], [row + 1, col], [row, col - 1], [row, col + 1]] as [number, number][])
     .filter(([r, c]) => r >= 0 && r < size && c >= 0 && c < size);
 }
 
