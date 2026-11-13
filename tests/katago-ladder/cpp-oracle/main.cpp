@@ -68,19 +68,6 @@ json handle(const json& request) {
     {"oracle", "KataGo Board::searchIsLadderCaptured"},
     {"unknownStatusAvailable", false}
   };
-  if(id == "double-ko-death") {
-    const Loc a = Location::getLoc(4, 3, size);
-    const Loc b = Location::getLoc(4, 5, size);
-    response["debug"] = {
-      {"targetLiberties", board.getNumLiberties(target)},
-      {"aImmediate", board.getNumImmediateLiberties(a)},
-      {"bImmediate", board.getNumImmediateLiberties(b)},
-      {"aKoMouth", board.wouldBeKoCapture(a, attacker)},
-      {"bKoMouth", board.wouldBeKoCapture(b, attacker)},
-      {"aPostLiberties", board.getNumLibertiesAfterPlay(a, getOpp(attacker), 3)},
-      {"bPostLiberties", board.getNumLibertiesAfterPlay(b, getOpp(attacker), 3)}
-    };
-  }
   return response;
 }
 }
