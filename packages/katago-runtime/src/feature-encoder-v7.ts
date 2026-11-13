@@ -4,7 +4,7 @@ export type V7Color = "B" | "W";
 export type V7Stone = 0 | 1 | 2;
 export type V7ScoringRule = "area" | "territory";
 export type V7TaxRule = "none" | "seki" | "all";
-export type V7KoRule = "simple" | "positional" | "situational";
+export type V7KoRule = "simple" | "positional" | "situational" | "spight";
 
 export interface V7Move {
   player: V7Color;
@@ -303,12 +303,12 @@ export function encodeKataGoV7(
   }
 
   // Match KataGo's history visibility and phase cap.
-  if (position.maxHistory !== undefined && (!Number.isInteger(position.maxHistory) || position.maxHistory < 0 || position.maxHistory > 5)) {
+  if (position.maxHistory !== undefined && (!Number.isInteger(position.maxHistory) || position.maxHistory < 0)) {
     throw new RangeError("maxHistory must be an integer between 0 and 5.");
   }
   let maxHistory = position.suppressHistory ? 0 : 5;
   if (!position.suppressHistory && position.gameFinishedOrPastPhaseEnd) maxHistory = 1;
-  maxHistory = Math.min(maxHistory, position.maxHistory ?? 5, position.validTurnsThisPhase);
+  maxHistory = Math.min(maxHistory, 5, position.maxHistory ?? 5, position.validTurnsThisPhase);
   const recentMoves = maxHistory > 0 ? position.moves.slice(-maxHistory).reverse() : [];
   const expectedPreviousPlayer: V7Color = position.nextPlayer === "B" ? "W" : "B";
   const passGlobalIndex = [0, 1, 2, 3, 4];
