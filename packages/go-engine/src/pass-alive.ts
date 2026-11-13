@@ -66,8 +66,8 @@ function regionsForColor(
   const visited = Array.from({ length: size }, () => Array<boolean>(size).fill(false));
   const regions: CandidateRegion[] = [];
 
-  // Benson regions for a color are connected components of all points that
-  // are not occupied by that color (empty points plus opponent stones).
+  // A Benson region is a connected component of points not occupied by this
+  // color (empty points plus opponent stones); own chains form its boundary.
   for (let row = 0; row < size; row += 1) {
     for (let col = 0; col < size; col += 1) {
       if (board[row][col] === color || visited[row][col]) continue;
@@ -79,8 +79,7 @@ function regionsForColor(
         const [r, c] = queue.pop()!;
         points.push([r, c]);
         for (const [nr, nc] of neighbors(r, c, size)) {
-          const neighborColor = board[nr][nc];
-          if (neighborColor === color) {
+          if (board[nr][nc] === color) {
             const id = groupAt[nr][nc];
             if (id >= 0) borderingGroups.add(id);
           } else if (!visited[nr][nc]) {
@@ -92,9 +91,8 @@ function regionsForColor(
 
       const vitalFor = new Set<number>();
       for (const groupId of borderingGroups) {
-        const chain = chains[groupId];
         const adjacent = new Set<string>();
-        for (const [r, c] of chain.stones) {
+        for (const [r, c] of chains[groupId].stones) {
           for (const [nr, nc] of neighbors(r, c, size)) {
             if (board[nr][nc] !== color) adjacent.add(`${nr},${nc}`);
           }
@@ -107,14 +105,45 @@ function regionsForColor(
   return regions;
 }
 
+function bensonFixedPoint(
+  chains: Chain[],
+  regions: CandidateRegion[],
+  color: Stone,
+): { groups: Set<number>; regions: Set<number> } {
+  const groups = new Set(chains.filter(chain => chain.color === color).map(chain => chain.id));
+  const activeRegions = new Set(regions.map((_, index) => index));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const groupId of [...groups]) {
+      let vitalCount = 0;
+      for (const regionIndex of activeRegions) {
+        if (regions[regionIndex].vitalFor.has(groupId)) vitalCount += 1;
+      }
+      if (vitalCount < 2) {
+        groups.delete(groupId);
+        changed = true;
+      }
+    }
+    for (const regionIndex of [...activeRegions]) {
+      const stillVital = [...regions[regionIndex].vitalFor].some(groupId => groups.has(groupId));
+      if (!stillVital) {
+        activeRegions.delete(regionIndex);
+        changed = true;
+      }
+    }
+  }
+  return { groups, regions: activeRegions };
+}
+
 /**
- * Compute a conservative Benson pass-alive area.
+ * Conservative Benson unconditional-life and pass-alive-area calculation.
  *
- * For each color, iteratively eliminate chains with fewer than two vital
- * regions, then eliminate regions no longer vital to any surviving chain.
- * This is the standard unconditional-life fixed point. It intentionally does
- * not infer life from MCTS ownership, seki heuristics, or arbitrary empty
- * territory; uncertain points remain neutral.
+ * The fixed point identifies chains with at least two vital regions. Area is
+ * assigned only to empty points in surviving regions whose bordering chains
+ * all survive, and which do not contain an opponent's Benson-alive stones.
+ * This is not KataGo's complete Board::calculateArea implementation: it does
+ * not model suicide-rule overrides, safe/unsafe big territories, or seki tax.
  */
 export function calculatePassAliveArea(board: Board): PassAliveAreaResult {
   const size = board.length;
@@ -125,50 +154,38 @@ export function calculatePassAliveArea(board: Board): PassAliveAreaResult {
   const owners = Array.from({ length: size }, () => Array<Stone | null>(size).fill(null));
   const passAliveStones = Array.from({ length: size }, () => Array<boolean>(size).fill(false));
   const aliveGroupIds: Record<Stone, number[]> = { black: [], white: [] };
-  const assignedRegions: PassAliveRegion[] = [];
+
+  const byColor = {
+    black: regionsForColor(board, "black", groupAt, chains),
+    white: regionsForColor(board, "white", groupAt, chains),
+  };
+  const fixed = {
+    black: bensonFixedPoint(chains, byColor.black, "black"),
+    white: bensonFixedPoint(chains, byColor.white, "white"),
+  };
 
   for (const color of ["black", "white"] as const) {
-    const regions = regionsForColor(board, color, groupAt, chains);
-    const activeGroups = new Set(chains.filter(chain => chain.color === color).map(chain => chain.id));
-    const activeRegions = new Set(regions.map((_, index) => index));
-
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (const groupId of [...activeGroups]) {
-        let vitalCount = 0;
-        for (const regionIndex of activeRegions) {
-          if (regions[regionIndex].vitalFor.has(groupId)) vitalCount += 1;
-        }
-        if (vitalCount < 2) {
-          activeGroups.delete(groupId);
-          changed = true;
-        }
-      }
-      for (const regionIndex of [...activeRegions]) {
-        const region = regions[regionIndex];
-        const stillVital = [...region.vitalFor].some(groupId => activeGroups.has(groupId));
-        if (!stillVital) {
-          activeRegions.delete(regionIndex);
-          changed = true;
-        }
-      }
-    }
-
-    for (const groupId of activeGroups) {
+    for (const groupId of fixed[color].groups) {
       aliveGroupIds[color].push(groupId);
       for (const [r, c] of chains[groupId].stones) {
         passAliveStones[r][c] = true;
         owners[r][c] = color;
       }
     }
+  }
 
-    for (const regionIndex of activeRegions) {
-      const region = regions[regionIndex];
+  const assignedRegions: PassAliveRegion[] = [];
+  for (const color of ["black", "white"] as const) {
+    const opponent: Stone = color === "black" ? "white" : "black";
+    for (const regionIndex of fixed[color].regions) {
+      const region = byColor[color][regionIndex];
       const bordering = [...region.borderingGroups];
-      // A region is safely assigned only if every chain bordering it survived
-      // Benson elimination. This keeps unsettled opponent stones/regions neutral.
-      if (bordering.length === 0 || !bordering.every(id => activeGroups.has(id))) continue;
+      if (bordering.length === 0 || !bordering.every(id => fixed[color].groups.has(id))) continue;
+      // A living opposing chain inside this non-color component prevents the
+      // component from being safely claimed as this color's pass-alive area.
+      const containsOpponentAlive = region.points.some(([r, c]) =>
+        board[r][c] === opponent && passAliveStones[r][c]);
+      if (containsOpponentAlive) continue;
       for (const [r, c] of region.points) {
         if (board[r][c] === null) owners[r][c] = color;
       }
@@ -176,15 +193,15 @@ export function calculatePassAliveArea(board: Board): PassAliveAreaResult {
     }
   }
 
-  // Conflicting ownership is not proof of life (typically a seki boundary).
+  // A shared empty point is not a proven territory for either side (e.g. seki).
   for (let row = 0; row < size; row += 1) {
     for (let col = 0; col < size; col += 1) {
       if (board[row][col] !== null) continue;
-      const blackRegion = assignedRegions.some(region =>
-        region.color === "black" && region.points.some(([r, c]) => r === row && c === col));
-      const whiteRegion = assignedRegions.some(region =>
-        region.color === "white" && region.points.some(([r, c]) => r === row && c === col));
-      if (blackRegion && whiteRegion) owners[row][col] = null;
+      const adjacentColors = new Set<Stone>();
+      for (const [nr, nc] of neighbors(row, col, size)) {
+        if (passAliveStones[nr][nc]) adjacentColors.add(board[nr][nc]!);
+      }
+      if (adjacentColors.size > 1) owners[row][col] = null;
     }
   }
 
