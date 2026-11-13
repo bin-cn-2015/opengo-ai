@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyAction, boardKey, boardsEqual, createBoard, createGame, getGroup, playMove
+  applyAction, boardKey, boardsEqual, createBoard, createGame, getGroup, getLegalActions, playMove
 } from "./index";
 import type { Board } from "./index";
 
@@ -61,6 +61,21 @@ describe("board and group primitives", () => {
 });
 
 describe("game state and turn handling", () => {
+  it("generates all legal actions and always includes pass before game end", () => {
+    const game = createGame(9);
+    const actions = getLegalActions(game);
+    expect(actions).toHaveLength(82);
+    expect(actions).toContainEqual({ type: "play", row: 0, col: 0 });
+    expect(actions).toContainEqual({ type: "pass" });
+  });
+
+  it("does not generate actions after the game has ended", () => {
+    let game = createGame(9);
+    game = applyAction(game, { type: "pass" })!;
+    game = applyAction(game, { type: "pass" })!;
+    expect(getLegalActions(game)).toEqual([]);
+  });
+
   it("starts with black to play and zero captures", () => {
     const game = createGame(9);
     expect(game.toMove).toBe("black");
