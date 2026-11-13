@@ -124,9 +124,12 @@ export function searchLadder(
     }
     const groups = findTargetGroups(position);
     if (groups.length === 0) return { status: "captured", pv: [], reason: "captured" };
-    // A fragment with more than two liberties is not currently ladderable,
-    // but it must not make a separate, still-threatened fragment escape.
-    const threatenedGroups = groups.filter(group => group.liberties.size <= 2);
+    // KataGo's ladder reader uses turn-sensitive thresholds: the attacker
+    // can start/continue a ladder against a two-liberty group, but a defender
+    // to move with two liberties has already escaped that ladder. Apply this
+    // per group so a safe fragment never suppresses another threatened one.
+    const maxThreatenedLiberties = toMove === attacker ? 2 : 1;
+    const threatenedGroups = groups.filter(group => group.liberties.size <= maxThreatenedLiberties);
     if (threatenedGroups.length === 0) return { status: "escaped", pv: [], reason: "escaped" };
     if (threatenedGroups.some(group => group.liberties.size === 0)) return { status: "captured", pv: [], reason: "captured" };
     if (depth >= maxDepth) {
