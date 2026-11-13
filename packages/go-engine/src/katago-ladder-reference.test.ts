@@ -37,6 +37,19 @@ const referenceCases: readonly ReferenceCase[] = [
     expectedNodes: 1,
   },
   {
+    id: "defender-sole-response-upper-bound-capture",
+    provenance: "Board::getBoundNumLibertiesAfterPlay upperBound <= 1; capture verified by recursive play",
+    stones: [
+      ["white", 4, 4],
+      ["black", 3, 4], ["black", 4, 3], ["black", 5, 4],
+      ["black", 3, 5], ["black", 5, 5],
+    ],
+    target: [4, 4],
+    attacker: "black",
+    firstPlayer: "defender",
+    expected: "captured",
+  },
+  {
     id: "defender-connection-lower-bound",
     provenance: "Board::getBoundNumLibertiesAfterPlay lowerBound >= 3",
     stones: [
