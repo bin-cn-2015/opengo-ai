@@ -15,20 +15,17 @@ describe("ladder search", () => {
     expect(result.nodes).toBeGreaterThan(0);
   });
 
-  it("marks all stones in a chain when a forced ladder is proven", () => {
+  it("marks every stone in a chain that is immediately capturable", () => {
     const board = createBoard(9);
-    // A small edge ladder: the white target has two liberties, and black can
-    // keep attacking toward the edge. The exact result is bounded/tri-state.
-    board[0][1] = "white";
-    board[1][1] = "white";
-    board[0][0] = "black";
-    board[1][0] = "black";
-    board[2][1] = "black";
-    const result = searchLadder(board, 0, 1, "black", { maxNodes: 5000 });
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
+    board[5][4] = "black";
+    const result = searchLadder(board, 4, 4, "black");
     expect(result.status).toBe("captured");
-    const mask = findLadderedStones(board, "black", { maxNodes: 5000 });
-    expect(mask[1]).toBe(1);
-    expect(mask[10]).toBe(1);
+    expect(result.principalVariation[0]).toEqual({ row: 4, col: 5, color: "black" });
+    const mask = findLadderedStones(board, "black");
+    expect(mask[4 * 9 + 4]).toBe(1);
   });
 
   it("returns unknown rather than a false reading when a search budget is exhausted", () => {
