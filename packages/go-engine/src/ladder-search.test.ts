@@ -45,8 +45,23 @@ describe("ladder search", () => {
       },
     });
     expect(hookCalls).toBeGreaterThan(0);
-    // The root move has no ancestors, so an empty path is valid here.
-    expect(Array.isArray(observedPath)).toBe(true);
+    // The root move has no ancestors, so its legality hook receives an empty path.
+    expect(observedPath).toEqual([]);
+  });
+
+
+  it("continues tracking all original target fragments after a chain split", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[4][6] = "white";
+    board[3][4] = "black";
+    board[5][4] = "black";
+    board[4][3] = "black";
+    const result = searchLadder(board, 4, 4, "black", {
+      targetStones: [[4, 4], [4, 6]],
+    });
+    // The second original fragment has ample liberties, so the target has escaped.
+    expect(result.status).toBe("escaped");
   });
 
   it("returns unknown rather than a false reading when a search budget is exhausted", () => {
