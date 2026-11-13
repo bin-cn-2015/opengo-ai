@@ -78,6 +78,24 @@ describe("ladder search", () => {
     expect(result.status).toBe("escaped");
   });
 
+  it("does not claim capture when the defender has no local candidate accepted by the legality hook", () => {
+    const board = createBoard(9);
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
+    let checked = 0;
+    const result = searchLadder(board, 4, 4, "black", {
+      firstPlayer: "defender",
+      isLegalMove: () => {
+        checked += 1;
+        return false;
+      },
+    });
+    expect(checked).toBeGreaterThan(0);
+    expect(result.status).toBe("unknown");
+    expect(result.reason).toBe("ko-or-no-legal-move");
+  });
+
   it("returns unknown rather than a false reading when a search budget is exhausted", () => {
     const board = createBoard(9);
     board[4][4] = "white";
