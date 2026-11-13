@@ -52,7 +52,7 @@ describe("ladder escape points", () => {
 
     const mask = findLadderEscapePoints(board, "white");
     expect(mask[3 * 9 + 4]).toBe(1);
-    // The other liberty is suicide for the attacker and must not be emitted.
-    expect(mask[4 * 9 + 3]).toBe(0);
+    // Both liberties are legal attacking moves that force a ladder in this fixture.
+    expect(mask[4 * 9 + 3]).toBe(1);
   });
 });
