@@ -79,6 +79,11 @@ export function searchLadder(
   if (targetPoints.length === 0 || targetPoints.some(([r, c]) => !Number.isInteger(r) || !Number.isInteger(c) || r < 0 || c < 0 || r >= board.length || c >= board.length)) {
     throw new RangeError("targetStones must contain valid board coordinates.");
   }
+  // Coordinates may refer to original stones already captured by a setup
+  // move, but at least one original target stone must still be present.
+  if (!targetPoints.some(([r, c]) => board[r][c] === targetColor)) {
+    throw new RangeError("targetStones must include at least one surviving opponent stone.");
+  }
   const memo = new Map<string, NodeResult>();
   let nodes = 0;
   let cutoff: LadderSearchResult["reason"] | null = null;
