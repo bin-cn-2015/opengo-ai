@@ -92,6 +92,16 @@
         "unknown"
       ],
       "description": "Optional tri-state expectation for the TypeScript reader; the C++ oracle ignores this field."
+    },
+    "generatorSeed": {
+      "type": "integer",
+      "description": "Deterministic seed used to generate this position."
+    },
+    "targetLibertiesAtRoot": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Root liberties of the generated target chain."
     }
   },
   "additionalProperties": false
