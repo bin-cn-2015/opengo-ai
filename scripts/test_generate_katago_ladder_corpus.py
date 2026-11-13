@@ -16,6 +16,12 @@ class GeneratedLadderCorpusTests(unittest.TestCase):
     def test_candidates_have_live_groups_and_threatened_targets(self):
         cases = generator.generate_candidates(24, seed=67890)
         self.assertEqual(len(cases), 24)
+        regions = [case["targetRegion"] for case in cases]
+        self.assertEqual(regions.count("corner-band"), 8)
+        self.assertEqual(regions.count("edge-band"), 8)
+        self.assertEqual(regions.count("interior"), 8)
+        self.assertEqual(sum(case["firstPlayer"] == "attacker" for case in cases), 12)
+        self.assertEqual(sum(case["firstPlayer"] == "defender" for case in cases), 12)
         for case in cases:
             board = [[None] * case["size"] for _ in range(case["size"])]
             for color, row, col in case["stones"]:
@@ -25,6 +31,7 @@ class GeneratedLadderCorpusTests(unittest.TestCase):
             self.assertGreater(len(stones), 0, case["id"])
             self.assertIn(len(liberties), (1, 2, 3), case["id"])
             self.assertEqual(len(liberties), case["targetLibertiesAtRoot"])
+            self.assertEqual(len(stones), case["targetStonesAtRoot"])
 
 
 if __name__ == "__main__":
