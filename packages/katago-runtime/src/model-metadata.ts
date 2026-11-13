@@ -153,10 +153,12 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
   }
   required(metadata, "katago.build.requireExactNNLen");
 
-  if (modelVersion >= 15) {
-    booleanValue(metadata, "katago.preferPassAliveUnderSuicideRules", false);
-    booleanValue(metadata, "katago.preferExcludeTerritoryAdjacentToAtari", false);
-  }
+  const preferPassAliveUnderSuicideRules = modelVersion >= 15
+    ? (required(metadata, "katago.preferPassAliveUnderSuicideRules"), booleanValue(metadata, "katago.preferPassAliveUnderSuicideRules", false))
+    : false;
+  const preferExcludeTerritoryAdjacentToAtari = modelVersion >= 15
+    ? (required(metadata, "katago.preferExcludeTerritoryAdjacentToAtari"), booleanValue(metadata, "katago.preferExcludeTerritoryAdjacentToAtari", false))
+    : false;
   if (modelVersion >= 13) {
     for (const key of [
       "katago.postProcess.tdScoreMultiplier",
@@ -184,6 +186,8 @@ export function parseKataGoOnnxMetadata(metadata: OnnxMetadata): KataGoOnnxMetad
     numScoreValueChannels,
     numOwnershipChannels,
     metaEncoderVersion,
+    preferPassAliveUnderSuicideRules,
+    preferExcludeTerritoryAdjacentToAtari,
     nnXLen,
     nnYLen,
     requireExactNNLen: booleanValue(metadata, "katago.build.requireExactNNLen", false),
