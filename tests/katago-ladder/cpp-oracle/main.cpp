@@ -62,12 +62,26 @@ json handle(const json& request) {
   const bool captured = board.searchIsLadderCaptured(
     target, firstPlayer == "defender", working
   );
-  return json{
+  json response{
     {"id", id},
     {"status", captured ? "captured" : "escaped"},
     {"oracle", "KataGo Board::searchIsLadderCaptured"},
     {"unknownStatusAvailable", false}
   };
+  if(id == "double-ko-death") {
+    const Loc a = Location::getLoc(4, 3, size);
+    const Loc b = Location::getLoc(4, 5, size);
+    response["debug"] = {
+      {"targetLiberties", board.getNumLiberties(target)},
+      {"aImmediate", board.getNumImmediateLiberties(a)},
+      {"bImmediate", board.getNumImmediateLiberties(b)},
+      {"aKoMouth", board.wouldBeKoCapture(a, attacker)},
+      {"bKoMouth", board.wouldBeKoCapture(b, attacker)},
+      {"aPostLiberties", board.getNumLibertiesAfterPlay(a, getOpp(attacker), 3)},
+      {"bPostLiberties", board.getNumLibertiesAfterPlay(b, getOpp(attacker), 3)}
+    };
+  }
+  return response;
 }
 }
 
