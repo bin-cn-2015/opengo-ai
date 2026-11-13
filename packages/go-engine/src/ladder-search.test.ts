@@ -266,7 +266,7 @@ describe("ladder search", () => {
       [2, 4], [3, 3], [3, 5], [5, 3], [5, 5], [6, 4],
     ] as const) board[r][c] = "white";
     for (const [r, c] of [
-      [1, 4], [2, 3], [2, 5], [4, 3], [4, 5], [6, 3], [6, 5], [7, 4],
+      [1, 4], [2, 3], [2, 5], [4, 2], [4, 3], [4, 5], [4, 6], [6, 3], [6, 5], [7, 4],
     ] as const) board[r][c] = "black";
 
     const result = searchLadder(board, 4, 4, "black");
